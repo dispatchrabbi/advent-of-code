@@ -16,7 +16,7 @@ After cloning the repository, install dependencies:
 $ npm install
 ```
 
-## Usage
+## Running a puzzle solution
 
 ```
 $ node ./index.js [options] <YEAR> <DAY> <PART>
@@ -33,12 +33,17 @@ Many of the challenges come with example inputs to help you solve and troublesho
 - `--use-input-only`: (Default) Only run the puzzle with the real input.
 - `--use-examples-only`: Only run the puzzle with the example inputs.
 - `--use-input-and-examples`: Run the puzzle with the example inputs and the real input.
-- `--input=<FILE>`: Run the puzzle using the given file as the input.
+- `--input=<FILE>`: Run the puzzle using the given file as the input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `example.txt`.
+
+By default, the puzzle runner will time each input. You can control this with these flags:
+
+* `--timer`: (Default) Display the time for each input's run
+* `--no-timer`: Do not display the time for each input's run
 
 You can also change the verbosity of the output:
 
 - `--log-level=<LEVEL>`: (Default: info) Show only logs at `<LEVEL>` or higher. Options: `trace`, `debug`, `info`, `warn`, `error`, `silent`.
-- `--verbose`: Does the same thing as `--log-level=debug`.
+- `--debug`: Does the same thing as `--log-level=debug`.
 - `--silent`: Does the same thing as `--log-level=silent`.
 
 ## Writing a challenge
@@ -46,7 +51,7 @@ You can also change the verbosity of the output:
 In order to start on a new challenge, run:
 
 ```
-$ npm run new <YEAR> <DAY>
+$ node ./index.js --new <YEAR> <DAY>
 ```
 
 This will pre-populate some useful files in _./<YEAR>/<DAY>_, including:
@@ -98,6 +103,7 @@ There are a few directories in this repo to know about:
 * [ ] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.js_ to _expected.json_ and thus display star counts per year
 * [ ] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
+* [ ] Add option to pass input via STDIN
 
 Years:
 
