@@ -6,6 +6,9 @@ import parseArgs from 'minimist';
 
 import makeDir from 'make-dir';
 
+import timeSpan from 'time-span';
+import prettyMilliseconds from 'pretty-ms';
+
 const __filename = import.meta.url.replace('file://', '');
 const __dirname = path.dirname(__filename);
 
@@ -17,14 +20,17 @@ async function main() {
   log.setDefaultLevel('info');
 
   const argv = parseArgs(process.argv.slice(2), {
-    string: ['input', 'log-level'],
+    string: ['inputs', 'file', 'log-level'],
     boolean: [
       'help', 'new',
       'silent', 'debug',
-      'use-input-only', 'use-examples-only', 'use-input-and-examples',
-      'timer', 'no-timer',
+      'timer',
     ],
-    default: { 'log-level': 'info' },
+    default: {
+      'log-level': 'info',
+      'inputs': 'real',
+      'timer': true
+    },
   });
 
   // Display help text?
@@ -35,7 +41,7 @@ async function main() {
 
   // Set the log level
   const VALID_LOG_LEVELS = [ 'trace', 'debug', 'info', 'warn', 'error', 'silent' ];
-  if(argv['silent']) {
+  if(argv.silent) {
     argv['log-level'] = 'silent';
   } else if(argv.debug) {
     argv['log-level'] = 'debug';
@@ -44,7 +50,6 @@ async function main() {
   if(argv['log-level'] && VALID_LOG_LEVELS.includes(argv['log-level'])) {
     log.setLevel(argv['log-level']);
   }
-
 
   // Validate puzzle address inputs
   const [ year, day, part ] = argv._;
@@ -60,56 +65,121 @@ async function main() {
   const options = {
     timer: true,
     input: {
-      real: true,
+      real: false,
       examples: false,
       file: null,
     },
   };
 
-  if(argv['no-timer']) {
-    options.timer = false;
-  } else if(argv['timer']) {
-    options.timer = true;
+  if(['real', 'all'].includes(argv.inputs)) {
+    options.input.real = true;
   }
 
-  if(argv.input) {
-    options.input = {
-      file: argv.input,
-      real: false,
-      examples: false,
-    };
-  } else if(argv['use-input-and-examples']) {
-    options.input = {
-      file: null,
-      real: true,
-      examples: true,
-    };
-  } else if(argv['use-input-only']) {
-    options.input = {
-      file: null,
-      real: true,
-      examples: false,
-    };
-  } else if(argv['use-examples-only']) {
-    options.input = {
-      file: null,
-      real: false,
-      examples: true,
-    };
+  if(['examples', 'all'].includes(argv.inputs)) {
+    options.input.examples = true;
   }
+
+  if(argv.file) {
+    options.input.file = argv.file;
+  }
+
+  // passing --no-timer will set timer to false
+  options.timer = argv.timer;
 
   run(year, day, part, options);
 }
 
-async function run(year, day, part, options) {
-  // Determine if the desired puzzle does in fact exist
+async function run(year, day, part, options = { timer: true, input: { file: null, real: true, examples: false }}) {
+  log.info(`Running 📯 ${year} 🌅 ${day} 🧩 ${part}...`);
+  log.info('');
 
+  const puzzleDir = path.join(__dirname, `puzzles/${year}/${day}`);
+
+  // Import the puzzle function
+  const parts = await import(path.join(puzzleDir, 'puzzle.js'));
+  const fn = parts.default['part' + part];
+  if(typeof fn !== 'function') {
+    throw new Error(`Puzzle ${year}/${day} part ${part} is not a function (which probably means it doesn't exist)!`);
+  }
 
   // Gather the input files and expected outputs
+  const files = { real: null, examples: [] };
+
+  if(options.input.real || options.input.file) {
+    const realFilename = options.input.file || 'input.txt';
+    files.real = await fs.readFile(path.join(puzzleDir, realFilename), { encoding: 'utf-8' });
+  }
+
+  if(options.input.examples) {
+    const expectedContents = await fs.readFile(path.join(puzzleDir, 'expected.json'), { encoding: 'utf-8' });
+    const expected = JSON.parse(expectedContents).filter(obj => obj.part === part);
+
+    const exampleFileFilter = file => {
+      if(!file.isFile()) { return false; }
+      const DIFFERENT_PART_REGEX = new RegExp(`\\.part[^${part}]\\.txt$`);
+      if(DIFFERENT_PART_REGEX.test(file.name)) { return false; }
+      return file.name.endsWith('.txt') && file.name !== 'input.txt';
+    };
+    let exampleFiles = await fs.opendir(puzzleDir);
+    for await(let file of exampleFiles) {
+      if(exampleFileFilter(file)) {
+        const contents = await fs.readFile(path.join(puzzleDir, file.name), { encoding: 'utf-8' });
+        const expectedEntry = expected.find(obj => obj.file === file.name);
+
+        files.examples.push({
+          name: file.name,
+          contents,
+          expected: expectedEntry === undefined ? null : expectedEntry.output,
+        });
+      }
+    }
+  }
 
   // Run each example input
+  for(let example of files.examples) {
+    log.info(`🧪  ${example.name}...`);
+    const { result, elapsed } = await runFn(fn, example.contents);
+
+    if(example.expected) {
+      if(result === example.expected) {
+        log.info(`✅ The results match! Both say: ${result}`);
+      } else {
+        log.info(`❌ The results do not match. Expected ${example.expected} but got ${result}`);
+      }
+    } else {
+      log.info(`🎱 The result is: ${result}`);
+    }
+
+    if(options.timer) {
+      log.info(`🏁 ${prettyMilliseconds(elapsed, {formatSubMilliseconds: true})}`);
+    }
+    log.info('');
+  }
 
   // Run the real input
+  if(files.real) {
+    log.info(`🧮 Calculating for real` + (options.input.file ? ` with ${options.input.file}` : '') + '...');
+    const { result, elapsed } = await runFn(fn, files.real);
+
+    log.info(`⭐️ The result is: ${result}`);
+    if(options.timer) {
+      log.info(`🏁 ${prettyMilliseconds(elapsed, {formatSubMilliseconds: true})}`);
+    }
+    log.info('');
+  }
+}
+
+async function runFn(fn, input) {
+  console.group();
+  const end = timeSpan();
+  const result = await fn(input);
+  const elapsed = end();
+  console.groupEnd();
+
+  return {
+    result,
+    elapsed
+  };
 }
 
 async function create(year, day) {

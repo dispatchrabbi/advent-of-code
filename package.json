@@ -12,6 +12,8 @@
   "dependencies": {
     "loglevel": "^1.8.0",
     "make-dir": "^3.1.0",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "pretty-ms": "^7.0.1",
+    "time-span": "^5.0.0"
   }
 }

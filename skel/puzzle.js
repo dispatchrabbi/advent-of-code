@@ -11,7 +11,7 @@ async function part2(input) {
 }
 
 function parseInput(input) {
-  return input;
+  return input.trim();
 }
 
 export default { part1, part2 };

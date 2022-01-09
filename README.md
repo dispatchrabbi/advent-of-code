@@ -28,12 +28,10 @@ For example, to run Part 1 from Day 13 of the 2021 challenge, run:
 $ node ./index.js 2021 13 1
 ```
 
-Many of the challenges come with example inputs to help you solve and troubleshoot, along with the real input. By default, only the real input is run. You can change that with some command line flags:
+Many of the challenges come with example inputs to help you solve and troubleshoot, along with the real input. By default, only the real input is run. You can change that with `--inputs` and `--file`:
 
-- `--use-input-only`: (Default) Only run the puzzle with the real input.
-- `--use-examples-only`: Only run the puzzle with the example inputs.
-- `--use-input-and-examples`: Run the puzzle with the example inputs and the real input.
-- `--input=<FILE>`: Run the puzzle using the given file as the input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `example.txt`.
+- `--inputs=<TYPE>`: (Default: `real`) Run the puzzle with the given inputs. Options: `real`, `examples`, `all`.
+- `--file=<FILE>`: Run the puzzle using the given file as the real input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `example.txt`. Won't do much if used with `--inputs=examples`.
 
 By default, the puzzle runner will time each input. You can control this with these flags:
 
@@ -42,7 +40,7 @@ By default, the puzzle runner will time each input. You can control this with th
 
 You can also change the verbosity of the output:
 
-- `--log-level=<LEVEL>`: (Default: info) Show only logs at `<LEVEL>` or higher. Options: `trace`, `debug`, `info`, `warn`, `error`, `silent`.
+- `--log-level=<LEVEL>`: (Default: `info`) Show only logs at `<LEVEL>` or higher. Options: `trace`, `debug`, `info`, `warn`, `error`, `silent`.
 - `--debug`: Does the same thing as `--log-level=debug`.
 - `--silent`: Does the same thing as `--log-level=silent`.
 
@@ -56,12 +54,12 @@ $ node ./index.js --new <YEAR> <DAY>
 
 This will pre-populate some useful files in _./<YEAR>/<DAY>_, including:
 
-* _index.js_, to actually write the code in.
+* _puzzle.js_, to actually write the code in.
 * _input.txt_, for the real puzzle input.
 * _example.txt_, for an example input (as most puzzles have at least one).
 * _expected.json_, to add the expected output for given inputs.
 
-Each _index.js_ is expected to export two `async` functions named `part1` and `part2`.
+Each _puzzle.js_ is expected to export two `async` functions named `part1` and `part2`.
 
 ### Input file names
 
@@ -98,7 +96,8 @@ There are a few directories in this repo to know about:
 
 ## TODO
 
-* [ ] Build the scaffold
+* [x] Build the scaffold
+* [ ] Separate logging (debugging within the puzzle) from reporting (giving the user info)
 * [ ] Test the scaffold
 * [ ] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.js_ to _expected.json_ and thus display star counts per year
