@@ -56,7 +56,7 @@ async function main() {
 
   // Validate puzzle address inputs
   const [ year, day, part ] = argv._;
-  validatePuzzleAddress(year, day, argv.new ? null : part);
+  validatePuzzleAddress(year, day, part, !argv.new);
 
   // Are we creating a new puzzle scaffold?
   if(argv.new) {
@@ -69,7 +69,7 @@ async function main() {
     timer: true,
     input: {
       real: false,
-      examples: false,
+      tests: false,
       file: null,
     },
   };
@@ -78,8 +78,8 @@ async function main() {
     options.input.real = true;
   }
 
-  if(['examples', 'all'].includes(argv.inputs)) {
-    options.input.examples = true;
+  if(['tests', 'all'].includes(argv.inputs)) {
+    options.input.tests = true;
   }
 
   if(argv.file) {
@@ -92,7 +92,7 @@ async function main() {
   run(year, day, part, options);
 }
 
-async function run(year, day, part, options = { timer: true, input: { file: null, real: true, examples: false }}) {
+async function run(year, day, part, options = { timer: true, input: { file: null, real: true, tests: false }}) {
   console.log(chalk.whiteBright(`Running puzzle 📯 ${year} 🌅 ${day} 🧩 ${part}:`));
   console.log('');
 
@@ -106,14 +106,14 @@ async function run(year, day, part, options = { timer: true, input: { file: null
   }
 
   // Gather the input files and expected outputs
-  const files = { real: null, examples: [] };
+  const files = { real: null, tests: [] };
 
   if(options.input.real || options.input.file) {
     const realFilename = options.input.file || 'input.txt';
     files.real = await fs.readFile(path.join(puzzleDir, realFilename), { encoding: 'utf-8' });
   }
 
-  if(options.input.examples) {
+  if(options.input.tests) {
     const expectedContents = await fs.readFile(path.join(puzzleDir, 'expected.json'), { encoding: 'utf-8' });
     const expected = JSON.parse(expectedContents).filter(obj => obj.part === part);
 
@@ -129,7 +129,7 @@ async function run(year, day, part, options = { timer: true, input: { file: null
         const contents = await fs.readFile(path.join(puzzleDir, file.name), { encoding: 'utf-8' });
         const expectedEntry = expected.find(obj => obj.file === file.name);
 
-        files.examples.push({
+        files.tests.push({
           name: file.name,
           contents,
           expected: expectedEntry === undefined ? null : expectedEntry.output,
@@ -139,7 +139,7 @@ async function run(year, day, part, options = { timer: true, input: { file: null
   }
 
   // Run each example input
-  for(let example of files.examples) {
+  for(let example of files.tests) {
     console.log(`🧪 Testing ${example.name}...`);
     const { result, elapsed } = await runFn(fn, example.contents);
 
@@ -217,7 +217,7 @@ async function create(year, day) {
   log.debug('Cloning complete.');
 }
 
-function validatePuzzleAddress(year, day, part = null) {
+function validatePuzzleAddress(year, day, part = null, partRequired = false) {
   if(!/\d{4}/.test(year.toString(10))) {
     throw new Error(`YEAR must be a 4-digit number (YEAR was: ${year})`);
   }
@@ -226,8 +226,14 @@ function validatePuzzleAddress(year, day, part = null) {
     throw new Error(`DAY must be a 1- or 2-digit number (DAY was: ${day})`);
   }
 
-  if(part !== null && !/\d{1}/.test(part.toString(10))) {
-    throw new Error(`PART must be a 1-digit number (PART was: ${part})`);
+  if(partRequired) {
+    if(part === undefined || part === null) {
+      throw new Error(`PART is required when running a puzzle. (PART was: ${part})`);
+    }
+
+    if(!/\d{1}/.test(part.toString(10))) {
+      throw new Error(`PART must be a 1-digit number (PART was: ${part})`);
+    }
   }
 }
 
@@ -245,10 +251,10 @@ ${chalk.bold('Advent of Code Puzzle Runner')}
   ${chalk.bold('node ./index.js --help')}
 
 ${chalk.bold('OPTIONS:')}
-  --inputs=<TYPE>   Run the puzzle with the given input types. Options are: ${chalk.yellow('real')}, examples, all.
+  --inputs=<TYPE>   Run the puzzle with the given input types. Options are: ${chalk.yellow('real')}, tests, all.
                     Defaults to '${chalk.yellow('real')}'.
   --file=<FILE>     Run the puzzle using <FILE> as the input. <FILE> is relative to the puzzle directory, so it should
-                    probably look like "example.txt" or "input.txt", no other path needed.
+                    probably look like "test.txt" or "input.txt", no other path needed.
   --timer           Display the time the puzzle took to run for each input. ${chalk.yellow('On by default.')}
   --no-timer        Do not display the time the puzzle took to run for each input.
   --logs=<LEVEL>    Set the logging level inside puzzles to <LEVEL>. Options are: trace, debug, info, ${chalk.yellow('warn')}, error,

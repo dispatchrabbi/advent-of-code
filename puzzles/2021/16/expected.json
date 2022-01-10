@@ -1,0 +1,15 @@
+[
+  { "part": 1, "file": "test0.part1.txt", "output": 6 },
+  { "part": 1, "file": "test1.part1.txt", "output": 16 },
+  { "part": 1, "file": "test2.part1.txt", "output": 12 },
+  { "part": 1, "file": "test3.part1.txt", "output": 23 },
+  { "part": 1, "file": "test4.part1.txt", "output": 31 },
+  { "part": 2, "file": "test1.part2.txt", "output": 3 },
+  { "part": 2, "file": "test2.part2.txt", "output": 54 },
+  { "part": 2, "file": "test3.part2.txt", "output": 7 },
+  { "part": 2, "file": "test4.part2.txt", "output": 9 },
+  { "part": 2, "file": "test5.part2.txt", "output": 1 },
+  { "part": 2, "file": "test6.part2.txt", "output": 0 },
+  { "part": 2, "file": "test7.part2.txt", "output": 0 },
+  { "part": 2, "file": "test8.part2.txt", "output": 1 }
+]

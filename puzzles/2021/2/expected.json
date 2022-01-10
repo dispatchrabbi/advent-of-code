@@ -1,0 +1,4 @@
+[
+  { "part": 1, "file": "test-directions.txt", "output": 150 },
+  { "part": 2, "file": "test-directions.txt", "output": 900 }
+]

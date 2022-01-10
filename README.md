@@ -30,8 +30,8 @@ $ node ./index.js 2021 13 1
 
 Many of the challenges come with example inputs to help you solve and troubleshoot, along with the real input. By default, only the real input is run. You can change that with `--inputs` and `--file`:
 
-- `--inputs=<TYPE>`: (Default: `real`) Run the puzzle with the given inputs. Options: `real`, `examples`, `all`.
-- `--file=<FILE>`: Run the puzzle using the given file as the real input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `example.txt`. Won't do much if used with `--inputs=examples`.
+- `--inputs=<TYPE>`: (Default: `real`) Run the puzzle with the given inputs. Options: `real`, `tests`, `all`.
+- `--file=<FILE>`: Run the puzzle using the given file as the real input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `test.txt`. Won't do much if used with `--inputs=tests`.
 
 By default, the puzzle runner will time each input. You can control this with these flags:
 
@@ -56,7 +56,7 @@ This will pre-populate some useful files in _./<YEAR>/<DAY>_, including:
 
 * _puzzle.js_, to actually write the code in.
 * _input.txt_, for the real puzzle input.
-* _example.txt_, for an example input (as most puzzles have at least one).
+* _test.txt_, for an example input (as most puzzles have at least one).
 * _expected.json_, to add the expected output for given inputs.
 
 Each _puzzle.js_ is expected to export two `async` functions named `part1` and `part2`.
@@ -76,7 +76,7 @@ In order to check the output for the inputs to a puzzle, you can add the expecte
 ```json
 [
   ...
-  { "part": 1, "file": "example.txt", "output": 12345 },
+  { "part": 1, "file": "test.txt", "output": 12345 },
   ...
 ]
 ```
@@ -104,8 +104,8 @@ There are a few directories in this repo to know about:
 
 * [x] Build the scaffold
 * [x] Separate logging (debugging within the puzzle) from reporting (giving the user info)
-* [ ] Test the scaffold
-* [ ] Port over 2021
+* [ ] Test the scaffold (ha)
+* [x] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.txt_ to _expected.json_ and thus display star counts per year
 * [ ] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
 * [ ] Add option to pass input via STDIN
