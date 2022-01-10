@@ -106,7 +106,7 @@ There are a few directories in this repo to know about:
 * [x] Separate logging (debugging within the puzzle) from reporting (giving the user info)
 * [ ] Test the scaffold
 * [ ] Port over 2021
-* [ ] Star-counting mode: add expected outputs for _input.js_ to _expected.json_ and thus display star counts per year
+* [ ] Star-counting mode: add expected outputs for _input.txt_ to _expected.json_ and thus display star counts per year
 * [ ] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
 * [ ] Add option to pass input via STDIN
 
