@@ -1,3 +1,6 @@
+import loglevel from 'loglevel';
+const log = loglevel.getLogger('puzzle');
+
 async function part1(input) {
   const parsed = parseInput(input);
 

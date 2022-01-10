@@ -3,53 +3,56 @@ import fs from 'fs/promises';
 
 import log from 'loglevel';
 import parseArgs from 'minimist';
+import chalk from 'chalk';
 
 import makeDir from 'make-dir';
 
 import timeSpan from 'time-span';
 import prettyMilliseconds from 'pretty-ms';
 
+import configurePuzzleLogging from './lib/log.js';
+
 const __filename = import.meta.url.replace('file://', '');
 const __dirname = path.dirname(__filename);
 
 main().catch(
-  e => { log.error(e); process.exit(process.exitCode === 0 ? 1 : process.exitCode); }
+  e => { console.error(e); process.exit(process.exitCode === 0 ? 1 : process.exitCode); }
 );
 
 async function main() {
-  log.setDefaultLevel('info');
-
   const argv = parseArgs(process.argv.slice(2), {
-    string: ['inputs', 'file', 'log-level'],
+    string: ['inputs', 'file'],
     boolean: [
       'help', 'new',
       'silent', 'debug',
       'timer',
     ],
     default: {
-      'log-level': 'info',
-      'inputs': 'real',
-      'timer': true
+      inputs: 'real',
+      timer: true,
+      logs: 'warn',
     },
   });
 
   // Display help text?
   if(argv.help) {
-    log.info(help());
-    return;
+    help();
   }
 
-  // Set the log level
-  const VALID_LOG_LEVELS = [ 'trace', 'debug', 'info', 'warn', 'error', 'silent' ];
+  // Configure the log for logging inside puzzle solutions
   if(argv.silent) {
-    argv['log-level'] = 'silent';
+    argv.logs = 'silent';
   } else if(argv.debug) {
-    argv['log-level'] = 'debug';
+    argv.logs = 'debug';
   }
 
-  if(argv['log-level'] && VALID_LOG_LEVELS.includes(argv['log-level'])) {
-    log.setLevel(argv['log-level']);
+  const VALID_LOG_LEVELS = [ 'trace', 'debug', 'info', 'warn', 'error', 'silent' ];
+  if(!VALID_LOG_LEVELS.includes(argv.logs)) {
+    process.exitCode = 1;
+    throw new Error(`Invalid log level '${argv.logs}' given. Options are: ${VALID_LOG_LEVELS.join(',')}`);
   }
+  configurePuzzleLogging(argv.logs);
+
 
   // Validate puzzle address inputs
   const [ year, day, part ] = argv._;
@@ -90,8 +93,8 @@ async function main() {
 }
 
 async function run(year, day, part, options = { timer: true, input: { file: null, real: true, examples: false }}) {
-  log.info(`Running 📯 ${year} 🌅 ${day} 🧩 ${part}...`);
-  log.info('');
+  console.log(chalk.whiteBright(`Running puzzle 📯 ${year} 🌅 ${day} 🧩 ${part}:`));
+  console.log('');
 
   const puzzleDir = path.join(__dirname, `puzzles/${year}/${day}`);
 
@@ -137,35 +140,35 @@ async function run(year, day, part, options = { timer: true, input: { file: null
 
   // Run each example input
   for(let example of files.examples) {
-    log.info(`🧪  ${example.name}...`);
+    console.log(`🧪 Testing ${example.name}...`);
     const { result, elapsed } = await runFn(fn, example.contents);
 
     if(example.expected) {
       if(result === example.expected) {
-        log.info(`✅ The results match! Both say: ${result}`);
+        console.log(chalk.green(`✅ PASS! The result is: ${chalk.white.bold(result)}`));
       } else {
-        log.info(`❌ The results do not match. Expected ${example.expected} but got ${result}`);
+        console.log(chalk.redBright(`❌ FAIL. Expected ${chalk.white.bold(example.expected)} but got ${chalk.white.bold(result)}.`));
       }
     } else {
-      log.info(`🎱 The result is: ${result}`);
+      console.log(chalk.magenta(`🎱 TADA! The result is: ${chalk.white.bold(result)}`));
     }
 
     if(options.timer) {
-      log.info(`🏁 ${prettyMilliseconds(elapsed, {formatSubMilliseconds: true})}`);
+      console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
     }
-    log.info('');
+    console.log('');
   }
 
   // Run the real input
   if(files.real) {
-    log.info(`🧮 Calculating for real` + (options.input.file ? ` with ${options.input.file}` : '') + '...');
+    console.log(`🧮 Calculating for real` + (options.input.file ? ` with ${options.input.file}` : '') + '...');
     const { result, elapsed } = await runFn(fn, files.real);
 
-    log.info(`⭐️ The result is: ${result}`);
+    console.log(chalk.blue(`⭐️ The result is: ${chalk.white.bold(result)}`));
     if(options.timer) {
-      log.info(`🏁 ${prettyMilliseconds(elapsed, {formatSubMilliseconds: true})}`);
+      console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
     }
-    log.info('');
+    console.log('');
   }
 }
 
@@ -228,22 +231,32 @@ function validatePuzzleAddress(year, day, part = null) {
   }
 }
 
-function help() {
+function help(exitCode = 0) {
   const HELP_TEXT = `
-Advent of Code Puzzle Runner
+${chalk.bold('Advent of Code Puzzle Runner')}
 
-  node ./index.js [options] <YEAR> <DAY> <PART>
-  node ./index.js --new <YEAR> <DAY>
-  node ./index.js --help
+  To run a puzzle:
+  ${chalk.bold('node ./index.js [options] <YEAR> <DAY> <PART>')}
 
-  Running with --new will create and pre-populate the given puzzle directory if
-  it does not already exist. Running with --help will display this help text.
-  Otherwise, this will attempt to run the puzzle from year YEAR, day DAY,
-  part PART.
+  To create a new puzzle template:
+  ${chalk.bold('node ./index.js --new <YEAR> <DAY>')}
 
-OPTIONS:
-  (TK)
+  To view this help:
+  ${chalk.bold('node ./index.js --help')}
+
+${chalk.bold('OPTIONS:')}
+  --inputs=<TYPE>   Run the puzzle with the given input types. Options are: ${chalk.yellow('real')}, examples, all.
+                    Defaults to '${chalk.yellow('real')}'.
+  --file=<FILE>     Run the puzzle using <FILE> as the input. <FILE> is relative to the puzzle directory, so it should
+                    probably look like "example.txt" or "input.txt", no other path needed.
+  --timer           Display the time the puzzle took to run for each input. ${chalk.yellow('On by default.')}
+  --no-timer        Do not display the time the puzzle took to run for each input.
+  --logs=<LEVEL>    Set the logging level inside puzzles to <LEVEL>. Options are: trace, debug, info, ${chalk.yellow('warn')}, error,
+                    silent. Defaults to '${chalk.yellow('warn')}'.
+  --debug           Alias for ${chalk.white('--logs=debug')}.
+  --silent          Alias for ${chalk.white('--logs=silent')}.
   `;
 
-  return HELP_TEXT.trim() + '\n';
+  console.log(HELP_TEXT.trim() + '\n');
+  process.exit(exitCode);
 }

@@ -38,11 +38,11 @@ By default, the puzzle runner will time each input. You can control this with th
 * `--timer`: (Default) Display the time for each input's run
 * `--no-timer`: Do not display the time for each input's run
 
-You can also change the verbosity of the output:
+You can also change the verbosity of the logging from within puzzle solutions (which means you can leave logs in the solution without having to see them all the time):
 
-- `--log-level=<LEVEL>`: (Default: `info`) Show only logs at `<LEVEL>` or higher. Options: `trace`, `debug`, `info`, `warn`, `error`, `silent`.
-- `--debug`: Does the same thing as `--log-level=debug`.
-- `--silent`: Does the same thing as `--log-level=silent`.
+- `--logs=<LEVEL>`: (Default: `warn`) Show only logs at `<LEVEL>` or higher. Options: `trace`, `debug`, `info`, `warn`, `error`, `silent`.
+- `--debug`: Does the same thing as `--logs=debug`.
+- `--silent`: Does the same thing as `--logs=silent`.
 
 ## Writing a challenge
 
@@ -86,6 +86,12 @@ Where:
 * `"file"` indicates while input file the output is for, and
 * `"output"` is the output expected from the part given that input
 
+### Debugging output
+
+Logging is available via the `log` object inside each puzzle file. By using this instead of `console` directly, you can leave logging directly in the solution but not need to see it each time the solution is run. It also means you can use the full suite of log levels within the context of a solution without worrying about how they affect outside logging.
+
+See `--logs` and associated options above to change the logging that appears when you run a puzzle.
+
 ## Structure
 
 There are a few directories in this repo to know about:
@@ -97,7 +103,7 @@ There are a few directories in this repo to know about:
 ## TODO
 
 * [x] Build the scaffold
-* [ ] Separate logging (debugging within the puzzle) from reporting (giving the user info)
+* [x] Separate logging (debugging within the puzzle) from reporting (giving the user info)
 * [ ] Test the scaffold
 * [ ] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.js_ to _expected.json_ and thus display star counts per year

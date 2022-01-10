@@ -10,6 +10,7 @@
   "author": "Eli Morris-Heft (https://github.com/dispatchrabbi/)",
   "license": "WTFPL",
   "dependencies": {
+    "chalk": "^5.0.0",
     "loglevel": "^1.8.0",
     "make-dir": "^3.1.0",
     "minimist": "^1.2.5",
