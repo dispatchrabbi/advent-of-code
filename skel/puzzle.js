@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 

@@ -7,6 +7,7 @@ import chalk from 'chalk';
 
 import makeDir from 'make-dir';
 
+import { LiveContainer } from 'clui-live';
 import timeSpan from 'time-span';
 import prettyMilliseconds from 'pretty-ms';
 
@@ -93,8 +94,9 @@ async function main() {
 }
 
 async function run(year, day, part, options = { timer: true, input: { file: null, real: true, tests: false }}) {
-  console.log(chalk.whiteBright(`Running puzzle 📯 ${year} 🌅 ${day} 🧩 ${part}:`));
-  console.log('');
+  const logContainer = new LiveContainer().hook();
+
+  console.log(`Running puzzle 📯 ${year} 🌅 ${day} 🧩 ${part}:`);
 
   const puzzleDir = path.join(__dirname, `puzzles/${year}/${day}`);
 
@@ -140,35 +142,44 @@ async function run(year, day, part, options = { timer: true, input: { file: null
 
   // Run each example input
   for(let example of files.tests) {
-    console.log(`🧪 Testing ${example.name}...`);
+    const updateArea = logContainer.createLiveArea().pin();
+    const updateState = makeUpdateState(example.name, true, example.expected);
+    drawStatusArea(updateArea, updateState);
+
     const { result, elapsed } = await runFn(fn, example.contents);
 
-    if(example.expected) {
-      if(result === example.expected) {
-        console.log(chalk.green(`✅ PASS! The result is: ${chalk.white.bold(result)}`));
-      } else {
-        console.log(chalk.redBright(`❌ FAIL. Expected ${chalk.white.bold(example.expected)} but got ${chalk.white.bold(result)}.`));
-      }
-    } else {
-      console.log(chalk.magenta(`🎱 TADA! The result is: ${chalk.white.bold(result)}`));
-    }
+    updateState.result = result;
+    updateState.elapsed = elapsed;
+    drawStatusArea(updateArea, updateState);
+    updateArea.close();
+    // if(example.expected) {
+    //   if(result === example.expected) {
+    //     console.log(chalk.green(`✅ PASS! The result is: ${chalk.white.bold(result)}`));
+    //   } else {
+    //     console.log(chalk.redBright(`❌ FAIL. Expected ${chalk.white.bold(example.expected)} but got ${chalk.white.bold(result)}.`));
+    //   }
+    // } else {
+    //   console.log(chalk.magenta(`🎱 TADA! The result is: ${chalk.white.bold(result)}`));
+    // }
 
-    if(options.timer) {
-      console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
-    }
-    console.log('');
+    // if(options.timer) {
+    //   console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
+    // }
+    // console.log('');
   }
 
   // Run the real input
-  if(files.real) {
-    console.log(`🧮 Calculating for real` + (options.input.file ? ` with ${options.input.file}` : '') + '...');
+  if(files.real !== null) {
+    const updateArea = logContainer.createLiveArea().pin();
+    const updateState = makeUpdateState('input.txt', false);
+    drawStatusArea(updateArea, updateState);
+
     const { result, elapsed } = await runFn(fn, files.real);
 
-    console.log(chalk.blue(`⭐️ The result is: ${chalk.white.bold(result)}`));
-    if(options.timer) {
-      console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
-    }
-    console.log('');
+    updateState.result = result;
+    updateState.elapsed = elapsed;
+    drawStatusArea(updateArea, updateState);
+    updateArea.close();
   }
 }
 
@@ -183,6 +194,50 @@ async function runFn(fn, input) {
     result,
     elapsed
   };
+}
+
+function makeUpdateState(name, isTest, expected = null) {
+  return {
+    name,
+    isTest,
+    isPass: null,
+    result: null,
+    expected,
+    elapsed: null
+  };
+}
+
+function drawStatusArea(area, updateState) {
+  let icon = updateState.isTest ? '🧪' : '🧮';
+  let color = 'white';
+  let message = 'Running...'; // TODO: make this animated
+  let time = ';'
+
+  if(updateState.elapsed) {
+    if(updateState.isTest) {
+      if(updateState.isPass === true) {
+        icon = '✅';
+        color = 'green';
+        message = `PASS! The result is: ${chalk.white.bold(updateState.result)}`;
+      } else if(updateState.isPass === false) {
+        icon = '❌';
+        color = 'redBright';
+        message = `FAIL. Expected ${chalk.white.bold(updateState.expected)} but got ${chalk.white.bold(updateState.result)}.`;
+      } else {
+        icon = '🎱';
+        color = 'magenta';
+        message = `TADA! The result is: ${chalk.white.bold(updateState.result)}`;
+      }
+    } else {
+      icon = '⭐️';
+      color = 'blue';
+      message = `The result is: ${chalk.white.bold(updateState.result)}`;
+    }
+
+    time = ` (${chalk.yellow(prettyMilliseconds(updateState.elapsed, {formatSubMilliseconds: true}))})`;
+  }
+
+  area.write(chalk[color](`${icon} ${updateState.name}: ${message}${time}`));
 }
 
 async function create(year, day) {
