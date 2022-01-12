@@ -150,22 +150,9 @@ async function run(year, day, part, options = { timer: true, input: { file: null
 
     updateState.result = result;
     updateState.elapsed = elapsed;
+    updateState.isPass = result === example.expected;
     drawStatusArea(updateArea, updateState);
     updateArea.close();
-    // if(example.expected) {
-    //   if(result === example.expected) {
-    //     console.log(chalk.green(`✅ PASS! The result is: ${chalk.white.bold(result)}`));
-    //   } else {
-    //     console.log(chalk.redBright(`❌ FAIL. Expected ${chalk.white.bold(example.expected)} but got ${chalk.white.bold(result)}.`));
-    //   }
-    // } else {
-    //   console.log(chalk.magenta(`🎱 TADA! The result is: ${chalk.white.bold(result)}`));
-    // }
-
-    // if(options.timer) {
-    //   console.log(`🏁 Took ${chalk.yellow(prettyMilliseconds(elapsed, {formatSubMilliseconds: true}))}`);
-    // }
-    // console.log('');
   }
 
   // Run the real input
