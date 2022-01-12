@@ -198,7 +198,7 @@ function drawStatusArea(area, updateState) {
   let icon = updateState.isTest ? '🧪' : '🧮';
   let color = 'white';
   let message = 'Running...'; // TODO: make this animated
-  let time = ';'
+  let time = ''
 
   if(updateState.elapsed) {
     if(updateState.isTest) {
