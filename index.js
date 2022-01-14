@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 
 import log from 'loglevel';
 import parseArgs from 'minimist';
+import commander from 'commander';
 import chalk from 'chalk';
 
 import makeDir from 'make-dir';
@@ -22,6 +23,31 @@ main().catch(
 );
 
 async function main() {
+  const program = new commander.Command();
+
+  program
+    .command('run', { isDefault: true })
+    .description('run a puzzle')
+    .option('-i, --inputs <type>', 'designate which input types to use (`all`, `real`, `tests`)', 'real')
+    .option('--log-level <level>', 'set the logging level (`trace`, `debug`, `info`, `warn`, `error`, `silent`)', 'warn')
+    .option('-d, --debug', 'alias for --log-level=debug')
+    .option('-s, --silent', 'alias for --log-level=silent')
+    .argument('[year]', 'the year of the puzzle to run', 'latest')
+    .argument('[day]', 'the day of the puzzle to run', 'latest')
+    .argument('[part]', 'the part of the puzzle to run', 'all')
+    .action((year, day, part, options, command) => {
+
+    });
+
+  program
+    .command('new')
+    .description('set up files for a new puzzle')
+    .argument('[year]', 'which year the new puzzle is in', 'next')
+    .argument('[day]', 'which day the new puzzle is in', 'next')
+    .action((year, day, options, command) => {
+
+    });
+
   const argv = parseArgs(process.argv.slice(2), {
     string: ['inputs', 'file'],
     boolean: [
