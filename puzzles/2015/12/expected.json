@@ -1,0 +1,7 @@
+[
+  { "part": 1, "file": "test.txt", "output": 3 },
+  { "part": 2, "file": "test.txt", "output": 3 },
+  { "part": 2, "file": "red.part2.txt", "output": 4 },
+  { "part": 2, "file": "red2.part2.txt", "output": 0 },
+  { "part": 2, "file": "red3.part2.txt", "output": 6 }
+]

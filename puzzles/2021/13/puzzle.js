@@ -1,7 +1,7 @@
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
-import { draw2dArray } from "../../../utils/dots.js";
+import { draw2dArray } from "#utils/dots";
 
 async function part1(input) {
   const { dots, folds } = parseInput(input);

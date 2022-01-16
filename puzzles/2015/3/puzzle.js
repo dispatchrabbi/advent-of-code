@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
-import { coords2str } from '../../../utils/grid.js';
+import { coords2str } from '#utils/grid';
 
 const [ NORTH, SOUTH, EAST, WEST ] = [ '^', 'v', '>', '<' ];
 

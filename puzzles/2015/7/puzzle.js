@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
-import { isNumeric } from '../../../utils/math.js';
+import { isNumeric } from '#utils/maths';
 
 async function part1(input) {
   const instructions = parseInput(input);
