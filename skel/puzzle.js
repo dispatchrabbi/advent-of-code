@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
-async function part1(input) {
+async function part1(input, options = {}) {
   const parsed = parseInput(input);
 
   return parsed;
@@ -14,7 +14,7 @@ async function part2(input) {
   return parsed;
 }
 
-function parseInput(input) {
+function parseInput(input, options = {}) {
   return input.trim();
 }
 

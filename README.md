@@ -57,7 +57,7 @@ This will pre-populate some useful files in _./<YEAR>/<DAY>_, including:
 * _puzzle.js_, to actually write the code in.
 * _input.txt_, for the real puzzle input.
 * _test.txt_, for an example input (as most puzzles have at least one).
-* _expected.json_, to add the expected output for given inputs.
+* _expected.json_, to list inputs to test and what their outputs should be.
 
 Each _puzzle.js_ is expected to export two `async` functions named `part1` and `part2`.
 
@@ -65,8 +65,7 @@ Each _puzzle.js_ is expected to export two `async` functions named `part1` and `
 
 There are a few conventions regarding input filenames:
 
-* _input.txt_ is reserved for the real puzzle input. Any other filename ending in _.txt_ will be considered an example input.
-* If a filename ends in _.partX.txt_, it will only be used as an input for that part. For example, _short.part2.txt_ would be an example input only used when running part 2 of that day.
+* _input.txt_ is reserved for the real puzzle input. Use a different name ending in _.txt_ for test inputs.
 * If for some reason a puzzle has different real inputs for the two parts, use _input.part1.txt_ and _input.part2.txt_.
 
 ### Adding expected output
@@ -76,7 +75,7 @@ In order to check the output for the inputs to a puzzle, you can add the expecte
 ```json
 [
   ...
-  { "part": 1, "file": "test.txt", "output": 12345 },
+  { "part": 1, "file": "test.txt", "output": 12345, "options": { "rounds": 100 } },
   ...
 ]
 ```
@@ -84,7 +83,8 @@ In order to check the output for the inputs to a puzzle, you can add the expecte
 Where:
 * `"part"` indicates which part the output is for,
 * `"file"` indicates while input file the output is for, and
-* `"output"` is the output expected from the part given that input
+* `"output"` is the output expected from the part given that input (optional)
+* `"options"` is an object that will be passed to the `partX` function, useful for when the examples don't quite use the same parameters as the real question (optional)
 
 ### Debugging output
 

@@ -12,6 +12,7 @@ import timeSpan from 'time-span';
 import prettyMilliseconds from 'pretty-ms';
 
 import configurePuzzleLogging from './lib/log.js';
+import exp from 'constants';
 
 const __filename = import.meta.url.replace('file://', '');
 const __dirname = path.dirname(__filename);
@@ -117,26 +118,16 @@ async function run(year, day, part, options = { timer: true, input: { file: null
 
   if(options.input.tests) {
     const expectedContents = await fs.readFile(path.join(puzzleDir, 'expected.json'), { encoding: 'utf-8' });
-    const expected = JSON.parse(expectedContents).filter(obj => obj.part === part);
+    let expected = JSON.parse(expectedContents).filter(obj => obj.part === part);
 
-    const exampleFileFilter = file => {
-      if(!file.isFile()) { return false; }
-      const DIFFERENT_PART_REGEX = new RegExp(`\\.part[^${part}]\\.txt$`);
-      if(DIFFERENT_PART_REGEX.test(file.name)) { return false; }
-      return file.name.endsWith('.txt') && file.name !== 'input.txt';
-    };
-    let exampleFiles = await fs.opendir(puzzleDir);
-    for await(let file of exampleFiles) {
-      if(exampleFileFilter(file)) {
-        const contents = await fs.readFile(path.join(puzzleDir, file.name), { encoding: 'utf-8' });
-        const expectedEntry = expected.find(obj => obj.file === file.name);
-
-        files.tests.push({
-          name: file.name,
-          contents,
-          expected: expectedEntry === undefined ? null : expectedEntry.output,
-        });
-      }
+    for(let entry of expected) {
+      const contents = await fs.readFile(path.join(puzzleDir, entry.file), { encoding: 'utf-8' });
+      files.tests.push({
+        name: entry.file,
+        contents,
+        expected: entry.output === undefined ? null : entry.output,
+        options: entry.options === undefined ? null : entry.options,
+      });
     }
   }
 
@@ -146,11 +137,13 @@ async function run(year, day, part, options = { timer: true, input: { file: null
     const updateState = makeUpdateState(example.name, true, example.expected);
     drawStatusArea(updateArea, updateState);
 
-    const { result, elapsed } = await runFn(fn, example.contents);
+    const { result, elapsed } = await runFn(fn, example.contents, example.options);
 
     updateState.result = result;
     updateState.elapsed = elapsed;
-    updateState.isPass = result === example.expected;
+    if(example.expected !== null) {
+      updateState.isPass = result === example.expected;
+    }
     drawStatusArea(updateArea, updateState);
     updateArea.close();
   }
@@ -170,10 +163,10 @@ async function run(year, day, part, options = { timer: true, input: { file: null
   }
 }
 
-async function runFn(fn, input) {
+async function runFn(fn, input, options = null) {
   console.group();
   const end = timeSpan();
-  const result = await fn(input);
+  const result = await fn(input, options === null ? undefined : options);
   const elapsed = end();
   console.groupEnd();
 
