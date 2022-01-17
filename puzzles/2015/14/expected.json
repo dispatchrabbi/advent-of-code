@@ -1,0 +1,6 @@
+[
+  { "part": 1, "file": "test.txt", "output": 1120, "options": { "seconds": 1000 } },
+  { "part": 1, "file": "test.txt", "output": 2660 },
+  { "part": 2, "file": "test.txt", "output": 689, "options": { "seconds": 1000 } },
+  { "part": 2, "file": "test.txt", "output": 1564 }
+]
