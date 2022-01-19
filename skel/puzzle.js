@@ -8,13 +8,13 @@ async function part1(input, options = {}) {
   return parsed;
 }
 
-async function part2(input) {
+async function part2(input, options = {}) {
   const parsed = parseInput(input);
 
   return parsed;
 }
 
-function parseInput(input, options = {}) {
+function parseInput(input) {
   return input.trim();
 }
 

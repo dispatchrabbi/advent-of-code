@@ -1,5 +1,17 @@
 function sum(arr) {
-  return arr.reduce((total, num) => total + num, 0);
+  return arr.reduce(sumReducer, 0);
+}
+
+function sumReducer(running, val) {
+  return running + val;
+}
+
+function product(arr) {
+  return arr.reduce(productReducer, 1);
+}
+
+function productReducer(running, val) {
+  return running * val;
 }
 
 function isNumeric(str) {
@@ -7,6 +19,7 @@ function isNumeric(str) {
 }
 
 export {
-  sum,
+  sum, sumReducer,
+  product, productReducer,
   isNumeric
 };
