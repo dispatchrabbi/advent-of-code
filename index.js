@@ -88,7 +88,6 @@ async function main() {
     .argument('[year]', 'which year the new puzzle is in', createTestValidator(value => value === 'next' || validateYear(value), 'a four-digit number'), 'next')
     .argument('[day]', 'which day the new puzzle is for', createTestValidator(value => value === 'next' || validateDay(value), 'a one- or two-digit number'), 'next')
     .action(async (year, day, options, command) => {
-      console.debug({year, day, options});
       // fill in year/day/part
       if(year === 'next' && day === 'next') {
         year = await getLatestYear();
@@ -115,7 +114,6 @@ async function main() {
         return;
       }
 
-      console.debug({year, day});
       createPuzzle(year, day);
     });
 
