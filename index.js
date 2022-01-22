@@ -39,6 +39,7 @@ async function main() {
     .argument('[day]', 'the day of the puzzle to run', createTestValidator(value => value === 'latest' || validateDay(value), 'a one- or two-digit number'), 'latest')
     .argument('[part]', 'the part of the puzzle to run', createTestValidator(validatePart, 'a one-digit number'), 1)
     .action(async (year, day, part, options, command) => {
+      // set logging within puzzles
       let logLevel = options.logLevel;
       if(options.debug) {
         logLevel = 'debug';
@@ -53,10 +54,17 @@ async function main() {
         real: false,
         tests: false,
       }
-      if(['real', 'all'].includes(options.inputs) || options.all) {
+
+      if(options.tests) {
+        options.inputs = 'tests';
+      } else if(options.all) {
+        options.inputs = 'all';
+      }
+
+      if(['real', 'all'].includes(options.inputs)) {
         inputs.real = true;
       }
-      if(['tests', 'all'].includes(options.inputs) || options.all || options.tests) {
+      if(['tests', 'all'].includes(options.inputs)) {
         inputs.tests = true;
       }
       if(options.file) {
