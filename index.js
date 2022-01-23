@@ -1,17 +1,17 @@
 import path from 'path';
 import fs from 'fs/promises';
 
-import log from 'loglevel';
 import commander from 'commander';
-import chalk from 'chalk';
 
 import makeDir from 'make-dir';
 
-import { LiveArea, LiveContainer } from 'clui-live';
+import { LiveContainer } from 'clui-live';
 import timeSpan from 'time-span';
-import prettyMilliseconds from 'pretty-ms';
 
-import configurePuzzleLogging from './lib/log.js';
+import configurePuzzleLogging from '#lib/log';
+import { ConsoleRenderer, AttemptState, AnimationState } from '#lib/puzzle-renderer';
+import { isFunction, isAsyncFunction, isAsyncGeneratorFunction } from '#lib/is-function';
+import delay from '#lib/delay';
 
 const __filename = import.meta.url.replace('file://', '');
 const __dirname = path.dirname(__filename);
@@ -35,7 +35,7 @@ async function main() {
     .option('--log-level <level>', 'set the logging level (`trace`, `debug`, `info`, `warn`, `error`, `silent`)', createEnumValidator(VALID_LOG_LEVELS), 'warn')
     .option('-d, --debug', 'alias for --log-level=debug (overrides --log-level)')
     .option('-s, --silent', 'alias for --log-level=silent (overrides --log-level')
-    .argument('[puzzle]', 'which puzzle to run, formatted [YYYY-MM-]PART (defaults to the latest, part 1)', createTestValidator(validatePuzzleAddress, 'a puzzle formatted [YYYY-MM-]PART'), 1)
+    .argument('[puzzle]', 'which puzzle to run, formatted [YEAR-DAY-]PART (defaults to the latest, part 1)', createTestValidator(validatePuzzleAddress, 'a puzzle formatted [YEAR-DAY-]PART'), 1)
     // .argument('[year]', 'the year of the puzzle to run', createTestValidator(value => value === 'latest' || validateYear(value), 'a four-digit number'), 'latest')
     // .argument('[day]', 'the day of the puzzle to run', createTestValidator(value => value === 'latest' || validateDay(value), 'a one- or two-digit number'), 'latest')
     // .argument('[part]', 'the part of the puzzle to run', createTestValidator(validatePart, 'a one-digit number'), 1)
@@ -185,7 +185,7 @@ function validatePuzzleAddress(addressStr) {
 function decodePuzzleAddress(addressStr) {
   const decoded = { year: null, day: null, part: null };
 
-  const matches = /^(?:(\d{4})-(\d{2})-)?(\d)$/.exec(addressStr);
+  const matches = /^(?:(\d{4})-(\d{1,2})-)?(\d)$/.exec(addressStr);
   if(!matches) {
     return null;
   }
@@ -208,14 +208,12 @@ async function run(year, day, part, options = { inputs: { file: null, real: true
 
   // first, run the tests
   for(let attempt of attempts.tests) {
-    const updateState = makeUpdateState(attempt.name, true, attempt.expected);
-    await runAttempt(fn, attempt, updateState);
+    await runAttempt(fn, attempt);
   }
 
   // then run the real thing
   if(attempts.real) {
-    const updateState = makeUpdateState(attempts.real.name);
-    await runAttempt(fn, attempts.real, updateState);
+    await runAttempt(fn, attempts.real);
   }
 }
 
@@ -223,8 +221,8 @@ async function getPuzzleFn(puzzleDir, part) {
   const parts = await import(path.join(puzzleDir, 'puzzle.js'));
 
   const fn = parts.default['part' + part];
-  if(typeof fn !== 'function') {
-    throw new Error(`Puzzle ${year}/${day} part ${part} is not a function (which probably means it doesn't exist)!`);
+  if(!isAsyncFunction(fn) && !isAsyncGeneratorFunction(fn)) {
+    throw new Error(`Puzzle ${year}/${day} part ${part} is not an async function or an async generator function! (This may mean it doesn't exist or isn't getting exported.)`);
   }
 
   return fn;
@@ -239,6 +237,7 @@ async function gatherAttempts(puzzleDir, part, inputTypes = { file: null, real: 
 
     attempts.real = {
       name: filename,
+      isTest: false,
       input: contents,
       expected: null,
       options: null,
@@ -252,6 +251,7 @@ async function gatherAttempts(puzzleDir, part, inputTypes = { file: null, real: 
       const contents = await fs.readFile(path.join(puzzleDir, entry.file), { encoding: 'utf-8' });
       attempts.tests.push({
         name: entry.file,
+        isTest: true,
         input: contents,
         expected: entry.output === undefined ? null : entry.output,
         options: entry.options === undefined ? null : entry.options,
@@ -275,27 +275,30 @@ async function gatherExpectedValues(puzzleDir) {
   return expected;
 }
 
-async function runAttempt(fn, attempt, updateState) {
-  const updateArea = new LiveArea().hook().pin();
-  drawStatusArea(updateArea, updateState);
+async function runAttempt(fn, attempt) {
+  const attemptState = new AttemptState(attempt.name, attempt.isTest, attempt.expected);
+  const statusRenderer = new ConsoleRenderer(attemptState);
+  statusRenderer.open(true);
+  statusRenderer.render();
 
-  const { result, elapsed } = await runFn(fn, attempt.input, attempt.options);
-
-  updateState.result = result;
-  updateState.elapsed = elapsed;
-  if(attempt.expected !== null) {
-    updateState.isPass = result === attempt.expected;
+  let result, elapsed;
+  if(isAsyncGeneratorFunction(fn)) {
+    ({ result, elapsed } = await runGeneratorFn(fn, attempt, statusRenderer));
+  } else if(isAsyncFunction(fn)) {
+    ({ result, elapsed } = await runAsyncFn(fn, attempt));
+  } else {
+    throw new Error('Unknown puzzle function type! Use an async function or an async generator function.');
   }
-  drawStatusArea(updateArea, updateState);
-  updateArea.close();
+
+  attemptState.finish(result, elapsed);
+  statusRenderer.render();
+  statusRenderer.close();
 }
 
-async function runFn(fn, input, options = null) {
-  console.group();
+async function runAsyncFn(fn, attempt) {
   const end = timeSpan();
-  const result = await fn(input, options === null ? undefined : options);
+  const result = await fn(attempt.input, attempt.options || undefined);
   const elapsed = end();
-  console.groupEnd();
 
   return {
     result,
@@ -303,48 +306,35 @@ async function runFn(fn, input, options = null) {
   };
 }
 
-function makeUpdateState(name, isTest = false, expected = null) {
-  return {
-    name,
-    isTest,
-    isPass: null,
-    result: null,
-    expected,
-    elapsed: null
-  };
-}
+const UPDATE_DELAY_MS = 300;
+async function runGeneratorFn(fn, attempt, statusRenderer) {
+  const animationState = new AnimationState();
+  const animationRenderer = new ConsoleRenderer(animationState);
+  animationRenderer.open();
 
-function drawStatusArea(area, updateState) {
-  let icon = updateState.isTest ? '🧪' : '🧮';
-  let color = 'white';
-  let message = 'Running...'; // TODO: make this animated
-  let time = ''
+  const end = timeSpan();
 
-  if(updateState.elapsed) {
-    if(updateState.isTest) {
-      if(updateState.isPass === true) {
-        icon = '✅';
-        color = 'green';
-        message = `PASS! The result is: ${chalk.white.bold(updateState.result)}`;
-      } else if(updateState.isPass === false) {
-        icon = '❌';
-        color = 'redBright';
-        message = `FAIL. Expected ${chalk.white.bold(updateState.expected)} but got ${chalk.white.bold(updateState.result)}.`;
-      } else {
-        icon = '🎱';
-        color = 'magenta';
-        message = `TADA! The result is: ${chalk.white.bold(updateState.result)}`;
-      }
-    } else {
-      icon = '⭐️';
-      color = 'blue';
-      message = `The result is: ${chalk.white.bold(updateState.result)}`;
+  const generator = fn(attempt.input, attempt.options || undefined);
+  let next, result;
+  while(next = await generator.next()) {
+    if(next.done) {
+      result = next.value;
+      break;
     }
 
-    time = ` (${chalk.yellow(prettyMilliseconds(updateState.elapsed, {formatSubMilliseconds: true}))})`;
+    const { frame, msg } = next.value;
+
+    animationRenderer.update(frame);
+    statusRenderer.update(msg);
+
+    await delay(UPDATE_DELAY_MS);
   }
 
-  area.write(chalk[color](`${icon} ${updateState.name}: ${message}${time}`));
+  const elapsed = end();
+
+  animationRenderer.close();
+
+  return { result, elapsed };
 }
 
 async function createPuzzle(year, day) {
