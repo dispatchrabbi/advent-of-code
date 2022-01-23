@@ -306,7 +306,7 @@ async function runAsyncFn(fn, attempt) {
   };
 }
 
-const UPDATE_DELAY_MS = 300;
+const UPDATE_DELAY_MS = 100;
 async function runGeneratorFn(fn, attempt, statusRenderer) {
   const animationState = new AnimationState();
   const animationRenderer = new ConsoleRenderer(animationState);
