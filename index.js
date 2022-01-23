@@ -35,10 +35,11 @@ async function main() {
     .option('--log-level <level>', 'set the logging level (`trace`, `debug`, `info`, `warn`, `error`, `silent`)', createEnumValidator(VALID_LOG_LEVELS), 'warn')
     .option('-d, --debug', 'alias for --log-level=debug (overrides --log-level)')
     .option('-s, --silent', 'alias for --log-level=silent (overrides --log-level')
-    .argument('[year]', 'the year of the puzzle to run', createTestValidator(value => value === 'latest' || validateYear(value), 'a four-digit number'), 'latest')
-    .argument('[day]', 'the day of the puzzle to run', createTestValidator(value => value === 'latest' || validateDay(value), 'a one- or two-digit number'), 'latest')
-    .argument('[part]', 'the part of the puzzle to run', createTestValidator(validatePart, 'a one-digit number'), 1)
-    .action(async (year, day, part, options, command) => {
+    .argument('[puzzle]', 'which puzzle to run, formatted [YYYY-MM-]PART (defaults to the latest, part 1)', createTestValidator(validatePuzzleAddress, 'a puzzle formatted [YYYY-MM-]PART'), 1)
+    // .argument('[year]', 'the year of the puzzle to run', createTestValidator(value => value === 'latest' || validateYear(value), 'a four-digit number'), 'latest')
+    // .argument('[day]', 'the day of the puzzle to run', createTestValidator(value => value === 'latest' || validateDay(value), 'a one- or two-digit number'), 'latest')
+    // .argument('[part]', 'the part of the puzzle to run', createTestValidator(validatePart, 'a one-digit number'), 1)
+    .action(async (puzzle, options, command) => {
       // set logging within puzzles
       let logLevel = options.logLevel;
       if(options.debug) {
@@ -72,19 +73,14 @@ async function main() {
       }
 
       // fill in year/day/part
-      if(year === 'latest') {
+      let { year, day, part } = decodePuzzleAddress(puzzle);
+      if(year === null) {
         year = await getLatestYear();
-      } else {
-        year = +year;
       }
 
-      if(day === 'latest') {
+      if(day === null) {
         day = await getLatestDay(year);
-      } else {
-        day = +day;
       }
-
-      part = +part;
 
       // run the puzzle
       run(year, day, part, { inputs });
@@ -138,7 +134,7 @@ function createEnumValidator(validValues) {
   };
 }
 
-function createTestValidator(testFn, optionName, mustBeDescription) {
+function createTestValidator(testFn, mustBeDescription) {
   return function(value) {
     if(!testFn(value)) {
       throw new commander.InvalidArgumentError(`Must be ${mustBeDescription}.`);
@@ -171,6 +167,35 @@ function validateDay(day) {
 
 function validatePart(part) {
   return /^\d$/.test(part.toString(10));
+}
+
+function validatePuzzleAddress(addressStr) {
+  const address = decodePuzzleAddress(addressStr);
+  if(!address) {
+    return false;
+  }
+
+  const isYearValid = address.year === null || validateYear(address.year);
+  const isDayValid = address.day === null || validateDay(address.day);
+  const isPartValid = validatePart(address.part);
+
+  return isYearValid && isDayValid && isPartValid;
+}
+
+function decodePuzzleAddress(addressStr) {
+  const decoded = { year: null, day: null, part: null };
+
+  const matches = /^(?:(\d{4})-(\d{2})-)?(\d)$/.exec(addressStr);
+  if(!matches) {
+    return null;
+  }
+
+  const [ year, day, part ] = [ matches[1], matches[2], matches[3] ];
+  decoded.year = year ? +year : null;
+  decoded.day = day ? +day : null;
+  decoded.part = +part;
+
+  return decoded;
 }
 
 async function run(year, day, part, options = { inputs: { file: null, real: true, tests: false } }) {
