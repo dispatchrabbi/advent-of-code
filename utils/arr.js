@@ -1,7 +1,9 @@
+import { randomInt } from '#utils/maths';
+
 function uniquify(arr, compareFn = (a, b) => a === b) {
   const uniques = [];
   for(let el of arr) {
-    if(!uniques.some(candidate => compareFn(el, compareFn))) {
+    if(!uniques.some(candidate => compareFn(el, candidate))) {
       uniques.push(el);
     }
   }
@@ -19,7 +21,19 @@ function permute(arr) {
   return permutations;
 }
 
+function shuffle(arr) {
+  const shuffled = [];
+  const clone = arr.slice();
+
+  while(clone.length > 0) {
+    shuffled.push(...clone.splice(randomInt(0, clone.length), 1));
+  }
+
+  return shuffled;
+}
+
 export {
   uniquify,
   permute,
+  shuffle,
 };
