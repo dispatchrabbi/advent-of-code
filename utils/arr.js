@@ -13,12 +13,29 @@ function uniquify(arr, compareFn = (a, b) => a === b) {
 function permute(arr) {
   if(arr.length === 1) { return [ arr ]; }
 
-  const permutations = [];
+  let permutations = [];
   for(let el of arr) {
-    permutations.push(...permute(arr.filter(x => x !== el)).map(subpermutation => [el, ...subpermutation]));
+    permutations = permutations.concat(...permute(arr.filter(x => x !== el)).map(subpermutation => [el, ...subpermutation]));
   }
 
   return permutations;
+}
+
+function combine(arr) {
+  const clone = arr.slice();
+
+  if(clone.length === 1) {
+    return [ clone ];
+  }
+
+  const first = clone.pop();
+  const subcombinations = combine(clone);
+
+  let combinations = [ [first] ];
+  combinations = combinations.concat(subcombinations);
+  combinations = combinations.concat(subcombinations.map(combo => [ first, ...combo ]));
+
+  return combinations;
 }
 
 function shuffle(arr) {
@@ -34,6 +51,6 @@ function shuffle(arr) {
 
 export {
   uniquify,
-  permute,
+  permute, combine,
   shuffle,
 };
