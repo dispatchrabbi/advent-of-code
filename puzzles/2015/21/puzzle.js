@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
-import { sum } from '#utils/maths';
 
 const log = loglevel.getLogger('puzzle');
 
