@@ -107,12 +107,12 @@ There are a few directories in this repo to know about:
 * [ ] Test the scaffold (ha)
 * [x] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.txt_ to _expected.json_ and thus display star counts per year
-* [ ] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
+* [x] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
 * [ ] Add option to pass input via STDIN
 
 Years:
 
-* [ ] 2015
+* [x] 2015
 * [ ] 2016
 * [ ] 2017
 * [ ] 2018
