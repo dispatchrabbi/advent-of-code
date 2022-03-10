@@ -49,8 +49,15 @@ function shuffle(arr) {
   return shuffled;
 }
 
+function cmp(a, b) {
+  if(a < b) { return -1; }
+  if(a > b) { return  1; }
+  return 0;
+}
+
 export {
   uniquify,
   permute, combine,
   shuffle,
+  cmp,
 };

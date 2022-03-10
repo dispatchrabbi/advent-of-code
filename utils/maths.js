@@ -24,9 +24,14 @@ function randomInt(min, max) {
   return min + Math.floor(Math.random() * (max - min));
 }
 
+function mod(n, m) {
+  return ((n % m ) + m ) % m;
+}
+
 export {
   sum, sumReducer,
   product, productReducer,
   isNumeric,
-  randomInt
+  randomInt,
+  mod
 };
