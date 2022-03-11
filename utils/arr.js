@@ -10,6 +10,18 @@ function uniquify(arr, compareFn = (a, b) => a === b) {
   return uniques;
 }
 
+function transpose(arr) {
+  const transposed = [];
+  for(let row = 0; row < arr.length; ++row) {
+    for(let col = 0; col < arr[row].length; ++col) {
+      if(! (transposed[col] instanceof Array)) { transposed[col] = []; }
+      transposed[col][row] = arr[row][col];
+    }
+  }
+
+  return transposed;
+}
+
 function permute(arr) {
   if(arr.length === 1) { return [ arr ]; }
 
@@ -57,6 +69,7 @@ function cmp(a, b) {
 
 export {
   uniquify,
+  transpose,
   permute, combine,
   shuffle,
   cmp,
