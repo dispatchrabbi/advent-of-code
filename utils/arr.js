@@ -1,4 +1,4 @@
-import { randomInt } from '#utils/maths';
+import { randomInt, mod } from '#utils/maths';
 
 function uniquify(arr, compareFn = (a, b) => a === b) {
   const uniques = [];
@@ -20,6 +20,11 @@ function transpose(arr) {
   }
 
   return transposed;
+}
+
+function rotate(arr, places) {
+  places = mod(places, arr.length);
+  return arr.slice(-places).concat(arr.slice(0, -places));
 }
 
 function permute(arr) {
@@ -69,7 +74,7 @@ function cmp(a, b) {
 
 export {
   uniquify,
-  transpose,
+  transpose, rotate,
   permute, combine,
   shuffle,
   cmp,
