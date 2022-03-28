@@ -1,0 +1,7 @@
+[
+  { "part": 1, "file": "test.txt", "output": 2, "options": { "target": [ 2, 5 ] } },
+  { "part": 1, "file": "test.txt", "output": 1, "options": { "target": [ 2, 3 ] } },
+  { "part": 1, "file": "test.txt", "output": 0, "options": { "target": [ 3, 5 ] } },
+  { "part": 1, "file": "test17.txt", "output": 2 },
+  { "part": 2, "file": "test.txt", "output": 30 }
+]
