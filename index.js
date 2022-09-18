@@ -152,9 +152,14 @@ async function getLatestYear() {
 }
 
 async function getLatestDay(year) {
-  const entries = await fs.readdir(path.join(__dirname, 'puzzles', year.toString(10)));
-  const days = entries.filter(name => validateDay(name)).map(x => +x);
-  return Math.max(...days);
+  try {
+    const entries = await fs.readdir(path.join(__dirname, 'puzzles', year.toString(10)));
+    const days = entries.filter(name => validateDay(name)).map(x => +x);
+    return Math.max(...days);
+  } catch (ex) {
+    // we're here if the year directory doesn't exist yet
+    return 0;
+  }
 }
 
 function validateYear(year) {
@@ -339,6 +344,7 @@ async function runGeneratorFn(fn, attempt, statusRenderer) {
 
 async function createPuzzle(year, day) {
   const SKELETON_DIR = path.join(__dirname, 'skel');
+  const YEAR_DIR = path.join(__dirname, 'puzzles', year.toString(), day.toString());
   const PUZZLE_DIR = path.join(__dirname, 'puzzles', year.toString(), day.toString());
 
   const container = new LiveContainer().hook();
@@ -347,6 +353,7 @@ async function createPuzzle(year, day) {
   const checkArea = container.createLiveArea();
   checkArea.write(`Checking if the puzzle directory for ${year}/${day} (${PUZZLE_DIR}) exists...`);
   try {
+    await fs.access(YEAR_DIR);
     await fs.access(PUZZLE_DIR);
     // if we're still here, the directory exists, so warn and bail
     checkArea.write(`Checking if the puzzle directory for ${year}/${day} (${PUZZLE_DIR}) exists... it does! Nothing left to do.`);
