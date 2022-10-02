@@ -36,9 +36,6 @@ async function main() {
     .option('-d, --debug', 'alias for --log-level=debug (overrides --log-level)')
     .option('-s, --silent', 'alias for --log-level=silent (overrides --log-level')
     .argument('[puzzle]', 'which puzzle to run, formatted [YEAR-DAY-]PART (defaults to the latest, part 1)', createTestValidator(validatePuzzleAddress, 'a puzzle formatted [YEAR-DAY-]PART'), 1)
-    // .argument('[year]', 'the year of the puzzle to run', createTestValidator(value => value === 'latest' || validateYear(value), 'a four-digit number'), 'latest')
-    // .argument('[day]', 'the day of the puzzle to run', createTestValidator(value => value === 'latest' || validateDay(value), 'a one- or two-digit number'), 'latest')
-    // .argument('[part]', 'the part of the puzzle to run', createTestValidator(validatePart, 'a one-digit number'), 1)
     .action(async (puzzle, options, command) => {
       // set logging within puzzles
       let logLevel = options.logLevel;

@@ -19,24 +19,22 @@ $ npm install
 ## Running a puzzle solution
 
 ```
-$ node ./index.js [options] <YEAR> <DAY> <PART>
+$ node ./index.js [options] [YEAR-DAY-]PART
+$ node ./index.js run [options] [YEAR-DAY-]PART
 ```
 
 For example, to run Part 1 from Day 13 of the 2021 challenge, run:
 
 ```
-$ node ./index.js 2021 13 1
+$ node ./index.js 2021-13-1
 ```
+
+> If `YEAR` and `DAY` are not specified, the most recent puzzle will be run. `PART` must always be specified. Thus, during the actual Advent of Code event, you can run your solution with `node ./index.js run 1` or `node ./index.js run 2`.
 
 Many of the challenges come with example inputs to help you solve and troubleshoot, along with the real input. By default, only the real input is run. You can change that with `--inputs` and `--file`:
 
 - `--inputs=<TYPE>`: (Default: `real`) Run the puzzle with the given inputs. Options: `real`, `tests`, `all`.
 - `--file=<FILE>`: Run the puzzle using the given file as the real input. `<FILE>` is relative to the puzzle directory, so it will likely be something like `input.txt` or `test.txt`. Won't do much if used with `--inputs=tests`.
-
-By default, the puzzle runner will time each input. You can control this with these flags:
-
-* `--timer`: (Default) Display the time for each input's run
-* `--no-timer`: Do not display the time for each input's run
 
 You can also change the verbosity of the logging from within puzzle solutions (which means you can leave logs in the solution without having to see them all the time):
 
@@ -44,15 +42,17 @@ You can also change the verbosity of the logging from within puzzle solutions (w
 - `--debug`: Does the same thing as `--logs=debug`.
 - `--silent`: Does the same thing as `--logs=silent`.
 
-## Writing a challenge
+## Writing a puzzle
 
-In order to start on a new challenge, run:
+In order to start on a new puzzle, run:
 
 ```
-$ node ./index.js --new <YEAR> <DAY>
+$ node ./index.js new <YEAR> <DAY>
 ```
 
-This will pre-populate some useful files in _./<YEAR>/<DAY>_, including:
+> If `YEAR` and `DAY` aren't given, this command will create the next puzzle in the most recent year. If `YEAR` is given, the next puzzle in that year will be created. Thus, during the actual Advent of Code event, every day starts with `node ./index.js new` and you don't have to think about it.
+
+This will pre-populate some useful files (e.g., the contents of _skel/_) in _./<YEAR>/<DAY>_, including:
 
 * _puzzle.js_, to actually write the code in.
 * _input.txt_, for the real puzzle input.
@@ -92,23 +92,22 @@ Logging is available via the `log` object inside each puzzle file. By using this
 
 See `--logs` and associated options above to change the logging that appears when you run a puzzle.
 
+Additionally, each `partX` puzzle function can be a generator function. If you want to show intermediate progress (or create a cool animation), `yield` an object with `frame` and `msg` properties. These will be shown and live-updated on the command line while the puzzle runs.
+
 ## Structure
 
 There are a few directories in this repo to know about:
 
 * _lib_ is where the files needed to run the puzzle runner are kept; they shouldn't be needed for puzzle-solving
-* _skel_ is the skeleton directory that `npm run new` copies for a new day
+* _skel_ is the skeleton directory that `node ./index.js new` copies for a new day
 * _utils_ is for utilities meant to be used in puzzle-solving, such as algorithms or common data structures
 
 ## TODO
 
-* [x] Build the scaffold
-* [x] Separate logging (debugging within the puzzle) from reporting (giving the user info)
 * [ ] Test the scaffold (ha)
-* [x] Port over 2021
 * [ ] Star-counting mode: add expected outputs for _input.txt_ to _expected.json_ and thus display star counts per year
-* [x] Step mode: Export generators for part functions (instead of async functions) in order to do step-by-step visualizations or other iterative step fun
 * [ ] Add option to pass input via STDIN
+* [ ] Make it less clunky to create and run puzzles
 
 Years:
 
