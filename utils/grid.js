@@ -10,7 +10,25 @@ function str2coords(str) {
   };
 }
 
+function adjacent({x, y}) {
+  return [
+    { x: x-1, y: y+1 }, { x: x  , y: y+1 }, { x: x+1, y: y+1 },
+    { x: x-1, y: y   },                     { x: x+1, y: y   },
+    { x: x-1, y: y-1 }, { x: x  , y: y-1 }, { x: x+1, y: y-1 },
+  ];
+}
+
+function orthogonal({x, y}) {
+  return [
+                        { x: x  , y: y+1 },
+    { x: x-1, y: y   },                     { x: x+1, y: y   },
+                        { x: x  , y: y-1 },
+  ];
+}
+
 export {
   coords2str,
-  str2coords
+  str2coords,
+  adjacent,
+  orthogonal,
 };
