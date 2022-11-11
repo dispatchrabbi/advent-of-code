@@ -1,0 +1,4 @@
+[
+  { "part": 1, "file": "test.txt", "output": [1, 6, 5, 16, 1, 9, 9, 3], "options": { "multiline": true } },
+  { "part": 2, "file": "test2.txt", "output": [0, 17, 3, 2, 0, 0, 10], "options": { "multiline": true } }
+]
