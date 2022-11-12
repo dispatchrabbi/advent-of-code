@@ -1,0 +1,7 @@
+[
+  { "part": 1, "file": "test.txt", "output": 12, "options": { "listLength": 5 } },
+  { "part": 2, "file": "test-empty.txt", "output": "a2582a3a0e66e6e86e3812dcb672a272" },
+  { "part": 2, "file": "test-aoc2017.txt", "output": "33efeb34ea91902bb2f59c9920caa6cd" },
+  { "part": 2, "file": "test-123.txt", "output": "3efbe78a8d82f29979031a4aa0b16a9d" },
+  { "part": 2, "file": "test-124.txt", "output": "63960835bcdc130f0b66d7ff4f6a5a8e" }
+]
