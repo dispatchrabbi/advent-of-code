@@ -143,7 +143,7 @@ function createTestValidator(testFn, mustBeDescription) {
 
 async function getLatestYear() {
   const entries = await fs.readdir(path.join(__dirname, 'puzzles'));
-  const EXCLUDE = [ '2021' ]; // exclude 2021 because it's already done; will disable next year
+  const EXCLUDE = [ /* '2022' */ ]; // exclude the latest year when working on older puzzles
   const years = entries.filter(name => validateYear(name)).filter(name => !EXCLUDE.includes(name)).map(x => +x);
   return Math.max(...years);
 }
