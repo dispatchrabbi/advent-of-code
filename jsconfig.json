@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "#lib/*": [ "./lib/*.js" ],
+      "#utils/*": [ "./utils/*.js" ]
+    }
+  }
+}

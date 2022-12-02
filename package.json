@@ -6,7 +6,6 @@
   "main": "index.js",
   "imports": {
     "#lib/*": "./lib/*.js",
-    "#utils": "./utils/index.js",
     "#utils/*": "./utils/*.js"
   },
   "scripts": {

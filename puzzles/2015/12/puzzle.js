@@ -2,7 +2,8 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
-import { maths, obj } from '#utils';
+import { sum } from '#utils/maths';
+import { isPlainObject } from '#utils/obj';
 
 // for funsies, I'm gonna do part 1 the hacky way, with a regex
 // instead of the actual parse-and-walk-the-object way
@@ -26,7 +27,7 @@ async function part2(input) {
 }
 
 function filterRed(val) {
-  return !(obj.isPlainObject(val) && Object.values(val).includes('red'));
+  return !(isPlainObject(val) && Object.values(val).includes('red'));
 }
 
 function parseInput(input) {
@@ -43,11 +44,11 @@ function reduceToSum(val, filterFn = (val) => true) {
   }
 
   if(val instanceof Array) {
-    return maths.sum(val.map(el => reduceToSum(el, filterFn)));
+    return sum(val.map(el => reduceToSum(el, filterFn)));
   }
 
-  if(obj.isPlainObject(val)) {
-    return maths.sum(Object.values(val).map(el => reduceToSum(el, filterFn)));
+  if(isPlainObject(val)) {
+    return sum(Object.values(val).map(el => reduceToSum(el, filterFn)));
   }
 
   return 0;
