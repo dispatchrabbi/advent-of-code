@@ -1,13 +1,21 @@
 import { randomInt, mod } from '#utils/maths';
 
-function uniquify(arr, compareFn = (a, b) => a === b) {
+function uniquify(arr, equalFn = (a, b) => a === b) {
   const uniques = [];
   for(let el of arr) {
-    if(!uniques.some(candidate => compareFn(el, candidate))) {
+    if(!uniques.some(candidate => equalFn(el, candidate))) {
       uniques.push(el);
     }
   }
   return uniques;
+}
+
+function intersect(arr1, arr2, equalFn) {
+  if(equalFn) {
+    return uniquify(arr1.filter(el1 => arr2.some(el2 => equalFn(el1, el2))), equalFn);
+  } else {
+    return uniquify(arr1.filter(el => arr2.includes(el)));
+  }
 }
 
 function transpose(arr) {
@@ -73,7 +81,7 @@ function cmp(a, b) {
 }
 
 export {
-  uniquify,
+  uniquify, intersect,
   transpose, rotate,
   permute, combine,
   shuffle,
