@@ -16,6 +16,21 @@ After cloning the repository, install dependencies:
 $ npm install
 ```
 
+You will also need to create a _.env_ file:
+
+```
+$ cp ./.env.example ./.env
+```
+
+and populate the appropriate variables.
+
+| Variable | Example | Description |
+| --- | --- | --- |
+| `AOC_SESSION_COOKIE` | `session=000000...000` | A valid session cookie from your logged-in session at adventofcode.org. Get this via the Network panel in your favorite browser DevTools. |
+| `USER_AGENT_CONTACT_INFO` | `github.com/yourname/aoc by you@example.com` | Contact info (such as an email address and this repo) to include in the User-Agent header of requests to AOC. Why? Because [the creator asked us to](https://www.reddit.com/r/adventofcode/comments/z9dhtd/please_include_your_contact_info_in_the_useragent/). |
+| `DOWNLOAD_INPUTS` | `1` | Whether to download the input file when creating a new puzzle directory. `0` disables; `1` enables. |
+| `EXCLUDE_YEARS` | `2021,2022` | A comma-separated list of years to ignore when creating a new puzzle. Useful when doing puzzles in past years. Leave blank when working on the current year. |
+
 ## Running a puzzle solution
 
 ```

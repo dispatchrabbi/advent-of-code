@@ -10,8 +10,13 @@ import timeSpan from 'time-span';
 
 import configurePuzzleLogging from '#lib/log';
 import { ConsoleRenderer, AttemptState, AnimationState } from '#lib/puzzle-renderer';
-import { isFunction, isAsyncFunction, isAsyncGeneratorFunction } from '#lib/is-function';
+import { isAsyncFunction, isAsyncGeneratorFunction } from '#lib/is-function';
 import delay from '#lib/delay';
+
+import { downloadPuzzleInput } from '#lib/aoc';
+
+import dotenv from 'dotenv-safe';
+dotenv.config({ allowEmptyValues: true });
 
 const __filename = import.meta.url.replace('file://', '');
 const __dirname = path.dirname(__filename);
@@ -143,7 +148,7 @@ function createTestValidator(testFn, mustBeDescription) {
 
 async function getLatestYear() {
   const entries = await fs.readdir(path.join(__dirname, 'puzzles'));
-  const EXCLUDE = [ /* '2022' */ ]; // exclude the latest year when working on older puzzles
+  const EXCLUDE = process.env.EXCLUDE_YEARS ? process.env.EXCLUDE_YEARS.split(',') : [];
   const years = entries.filter(name => validateYear(name)).filter(name => !EXCLUDE.includes(name)).map(x => +x);
   return Math.max(...years);
 }
@@ -380,4 +385,19 @@ async function createPuzzle(year, day) {
 
   cloneArea.write(`Cloning the puzzle skeleton into ${PUZZLE_DIR}... done!`);
   cloneArea.close();
+
+  if(process.env.DOWNLOAD_INPUTS === '1') {
+    const downloadArea = container.createLiveArea();
+    downloadArea.write(`Downloading input for ${year}/${day}...`);
+
+    try {
+      const puzzleInput = await downloadPuzzleInput(year, day);
+      await fs.writeFile(path.join(PUZZLE_DIR, 'input.txt'), puzzleInput);
+      downloadArea.write(`Downloading input for ${year}/${day}... done!`);
+    } catch(err) {
+      downloadArea.append(err.message);
+    } finally {
+      downloadArea.close();
+    }
+  }
 }
