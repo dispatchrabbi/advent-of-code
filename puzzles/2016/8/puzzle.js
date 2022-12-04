@@ -3,7 +3,6 @@ import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
 import { rotate } from '#utils/arr';
 import { draw2dArray } from '#utils/dots';
-import { sleep } from '#utils/debug';
 
 const log = loglevel.getLogger('puzzle');
 

@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
-import delay from '#lib/delay';
 import { draw2dArray } from '#utils/dots';
 
 const log = loglevel.getLogger('puzzle');

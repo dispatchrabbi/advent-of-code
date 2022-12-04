@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -8,12 +10,17 @@ import makeDir from 'make-dir';
 import { LiveContainer } from 'clui-live';
 import timeSpan from 'time-span';
 
+import {
+  processYearDayArgument, processYearDayPartArgument,
+  validateYear, validateDay, validatePart, parsePuzzleString
+} from '#lib/puzzle-string';
+
 import configurePuzzleLogging from '#lib/log';
 import { ConsoleRenderer, AttemptState, AnimationState } from '#lib/puzzle-renderer';
 import { isAsyncFunction, isAsyncGeneratorFunction } from '#lib/is-function';
 import delay from '#lib/delay';
 
-import { downloadPuzzleInput } from '#lib/aoc';
+import { downloadPuzzleInput } from '#lib/aoc-api';
 
 import dotenv from 'dotenv-safe';
 dotenv.config({ allowEmptyValues: true });
@@ -28,122 +35,123 @@ main().catch(
 async function main() {
   const program = new commander.Command();
 
-  const VALID_INPUT_TYPES = ['all', 'real', 'tests'];
-  const VALID_LOG_LEVELS = [ 'trace', 'debug', 'info', 'warn', 'error', 'silent' ];
-  program
-    .command('run', { isDefault: true })
-    .description('run a puzzle')
-    .option('-i, --inputs <type>', 'designate which input types to use (`all`, `real`, `tests`)', createEnumValidator(VALID_INPUT_TYPES), 'real')
-    .option('--all', 'alias for --inputs=all')
-    .option('--tests', 'alias for --inputs=tests')
-    .option('-f, --file <file>', 'use the given file (relative to puzzle directory) as input (overrides --inputs)')
-    .option('--log-level <level>', 'set the logging level (`trace`, `debug`, `info`, `warn`, `error`, `silent`)', createEnumValidator(VALID_LOG_LEVELS), 'warn')
-    .option('-d, --debug', 'alias for --log-level=debug (overrides --log-level)')
-    .option('-s, --silent', 'alias for --log-level=silent (overrides --log-level')
-    .argument('[puzzle]', 'which puzzle to run, formatted [YEAR-DAY-]PART (defaults to the latest, part 1)', createTestValidator(validatePuzzleAddress, 'a puzzle formatted [YEAR-DAY-]PART'), 1)
-    .action(async (puzzle, options, command) => {
-      // set logging within puzzles
-      let logLevel = options.logLevel;
-      if(options.debug) {
-        logLevel = 'debug';
-      } else if(options.silent) {
-        logLevel = 'silent';
-      }
-      configurePuzzleLogging(logLevel);
-
-      // figure out inputs
-      const inputs = {
-        file: null,
-        real: false,
-        tests: false,
-      }
-
-      if(options.tests) {
-        options.inputs = 'tests';
-      } else if(options.all) {
-        options.inputs = 'all';
-      }
-
-      if(['real', 'all'].includes(options.inputs)) {
-        inputs.real = true;
-      }
-      if(['tests', 'all'].includes(options.inputs)) {
-        inputs.tests = true;
-      }
-      if(options.file) {
-        inputs.file = options.file;
-      }
-
-      // fill in year/day/part
-      let { year, day, part } = decodePuzzleAddress(puzzle);
-      if(year === null) {
-        year = await getLatestYear();
-      }
-
-      if(day === null) {
-        day = await getLatestDay(year);
-      }
-
-      // run the puzzle
-      run(year, day, part, { inputs });
-    });
-
+  // new
   program
     .command('new')
-    .description('set up files for a new puzzle')
-    .argument('[year]', 'which year the new puzzle is in', createTestValidator(value => value === 'next' || validateYear(value), 'a four-digit number'), 'next')
-    .argument('[day]', 'which day the new puzzle is for', createTestValidator(value => value === 'next' || validateDay(value), 'a one- or two-digit number'), 'next')
-    .action(async (year, day, options, command) => {
-      // fill in year/day/part
-      if(year === 'next' && day === 'next') {
-        year = await getLatestYear();
-        day = await getLatestDay(year);
+    .description('Create a new puzzle folder.')
+    .argument(
+      '[puzzle]',
+      'The puzzle to create a folder for, formatted as `YEAR/DAY`. If omitted, it will create the next puzzle in the current year.',
+      processYearDayArgument,
+      'latest'
+    )
+    .action(handleNewSubcommand);
 
-        day++;
-        if(day > 25) {
-          year++;
-          day = 1;
-        }
-      } else if(day === 'next') {
-        year = +year;
-        day = await getLatestDay(year);
+  // run
+  program
+    .command('run')
+    .description('Run a puzzle solution.')
+    .argument(
+      '<puzzle>',
+      'The puzzle to run, formatted as `PART` or `YEAR/DAY/PART`. If omitted, it will run the latest puzzle.',
+      processYearDayPartArgument,
+      'latest'
+    )
+    .option('--tests', 'run test cases instead of the real puzzle input')
+    .option('--debug', 'enable debug logging within puzzles (implied by --tests)')
+    .option('--silent', 'disable debug logging within puzzles')
+    .option('--submit', 'submit the answer to adventofcode.com after the puzzle is run (has no effect when used with --tests)')
+    .action(handleRunSubcommand);
 
-        day++;
-        if(day > 25) {
-          console.warn(`All the days for ${year} are accounted for. Cowardly refusing to create ${year + 1} Day 1 when ${year} was explicitly specified.`);
-          process.exitCode = 1;
-          return;
-        }
-      } else if(year === 'next') {
-        console.warn(`You want me to create a specific day but in whatever the next year is? That's probably not actually what you want me to do. Please specify the year.`);
-        process.exitCode = 1;
-        return;
-      }
+  // test
+  program
+    .command('test')
+    .description('Run puzzle test cases. Alias for using --tests with the `run` command.')
+    .argument(
+      '<puzzle>',
+      'The puzzle to run, formatted as `PART` or `YEAR/DAY/PART`. If omitted, it will run the latest puzzle.',
+      processYearDayPartArgument,
+      'latest'
+    )
+    .option('--silent', 'disable debug logging within puzzles')
+    .action(async (puzzle, options, command) => {
+      options.tests = true;
+      return handleRunSubcommand(puzzle, options, command);
+    });
 
-      createPuzzle(year, day);
+  // submit
+  program
+    .command('submit')
+    .description('Run the puzzle and submit the answer to adventofcode.com. Alias for using --submit with the `run` command.')
+    .argument(
+      '<puzzle>',
+      'The puzzle to run, formatted as `PART` or `YEAR/DAY/PART`. If omitted, it will run the latest puzzle.',
+      processYearDayPartArgument,
+      'latest'
+    )
+    .option('--debug', 'enable debug logging within puzzles')
+    .action(async (puzzle, options, command) => {
+      options.submit = true;
+      return handleRunSubcommand(puzzle, options, command);
     });
 
   program.parse(process.argv);
 }
 
-function createEnumValidator(validValues) {
-  return function(value) {
-    if(!validValues.includes(value)) {
-      throw new commander.InvalidArgumentError(`Valid values are: ${validValues.join(', ')}.`);
-    }
+async function handleNewSubcommand(puzzle, options, command) {
+  let year = null, day = null;
 
-    return value;
-  };
+  if(puzzle === 'latest') {
+    year = await getLatestYear();
+    day = await getLatestDay(year);
+
+    day += 1; // we want to create the NEXT day after the latest one
+    if(!validateDay(day)) {
+      console.error(`Cowardly refusing to create ${year}/${day}. Try giving a specific YEAR/DAY.`);
+      process.exitCode = 1;
+      return;
+    }
+  } else {
+    let parsed = parsePuzzleString(puzzle);
+    year = parsed.year;
+    day = parsed.day;
+  }
+
+  createPuzzle(year, day);
 }
 
-function createTestValidator(testFn, mustBeDescription) {
-  return function(value) {
-    if(!testFn(value)) {
-      throw new commander.InvalidArgumentError(`Must be ${mustBeDescription}.`);
-    }
+async function handleRunSubcommand(puzzle, options, command) {
+  const runTests = options.tests;
+  const submitAnswer = runTests ? false : options.submit;
+  const logLevel = runTests ?
+    (options.silent ? 'silent' : 'debug') :
+    (options.debug ? 'debug' : 'silent');
 
-    return value;
+  configurePuzzleLogging(logLevel);
+
+  let year = null, day = null, part = null;
+  if(puzzle !== 'latest') {
+    let parsed = parsePuzzleString(puzzle);
+    year = parsed.year;
+    day = parsed.day;
+    part = parsed.part;
   }
+
+  if(year === null) {
+    year = await getLatestYear();
+  }
+  if(day === null) {
+    day = await getLatestDay(year);
+  }
+  if(part === null) {
+    part = 1;
+  }
+
+  // run the puzzle
+  run(year, day, part, {
+    inputs: { real: !runTests, tests: runTests, file: null }, // TODO: remove file
+    submit: submitAnswer,
+  });
 }
 
 async function getLatestYear() {
@@ -162,47 +170,6 @@ async function getLatestDay(year) {
     // we're here if the year directory doesn't exist yet
     return 0;
   }
-}
-
-function validateYear(year) {
-  return /^\d{4}$/.test(year.toString(10));
-}
-
-function validateDay(day) {
-  return /^\d{1,2}$/.test(day.toString(10));
-}
-
-function validatePart(part) {
-  return /^\d$/.test(part.toString(10));
-}
-
-function validatePuzzleAddress(addressStr) {
-  const address = decodePuzzleAddress(addressStr);
-  if(!address) {
-    return false;
-  }
-
-  const isYearValid = address.year === null || validateYear(address.year);
-  const isDayValid = address.day === null || validateDay(address.day);
-  const isPartValid = validatePart(address.part);
-
-  return isYearValid && isDayValid && isPartValid;
-}
-
-function decodePuzzleAddress(addressStr) {
-  const decoded = { year: null, day: null, part: null };
-
-  const matches = /^(?:(\d{4})-(\d{1,2})-)?(\d)$/.exec(addressStr);
-  if(!matches) {
-    return null;
-  }
-
-  const [ year, day, part ] = [ matches[1], matches[2], matches[3] ];
-  decoded.year = year ? +year : null;
-  decoded.day = day ? +day : null;
-  decoded.part = +part;
-
-  return decoded;
 }
 
 async function run(year, day, part, options = { inputs: { file: null, real: true, tests: false } }) {
