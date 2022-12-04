@@ -9,6 +9,7 @@ import makeDir from 'make-dir';
 
 import { LiveContainer } from 'clui-live';
 import timeSpan from 'time-span';
+import chalk from 'chalk';
 
 import {
   processYearDayArgument, processYearDayPartArgument,
@@ -20,7 +21,7 @@ import { ConsoleRenderer, AttemptState, AnimationState } from '#lib/puzzle-rende
 import { isAsyncFunction, isAsyncGeneratorFunction } from '#lib/is-function';
 import delay from '#lib/delay';
 
-import { downloadPuzzleInput } from '#lib/aoc-api';
+import { downloadPuzzleInput, submitPuzzleAnswer } from '#lib/aoc-api';
 
 import dotenv from 'dotenv-safe';
 dotenv.config({ allowEmptyValues: true });
@@ -172,7 +173,7 @@ async function getLatestDay(year) {
   }
 }
 
-async function run(year, day, part, options = { inputs: { file: null, real: true, tests: false } }) {
+async function run(year, day, part, options = { inputs: { file: null, real: true, tests: false }, submit: false }) {
   // gather everything we'll need
   const PUZZLE_DIR = path.join(__dirname, `puzzles/${year}/${day}`);
   const fn = await getPuzzleFn(PUZZLE_DIR, part);
@@ -187,7 +188,11 @@ async function run(year, day, part, options = { inputs: { file: null, real: true
 
   // then run the real thing
   if(attempts.real) {
-    await runAttempt(fn, attempts.real);
+    const answer = await runAttempt(fn, attempts.real);
+    if(options.submit) {
+      await delay(100); // XXX: papering over a bug where clui-live won't flush when areas are closed
+      await submitPuzzle(year, day, part, answer);
+    }
   }
 }
 
@@ -267,6 +272,8 @@ async function runAttempt(fn, attempt) {
   attemptState.finish(result, elapsed);
   statusRenderer.render();
   statusRenderer.close();
+
+  return result;
 }
 
 async function runAsyncFn(fn, attempt) {
@@ -309,6 +316,33 @@ async function runGeneratorFn(fn, attempt, statusRenderer) {
   animationRenderer.close();
 
   return { result, elapsed };
+}
+
+async function submitPuzzle(year, day, part, answer) {
+  const container = new LiveContainer().hook();
+  const submitArea = container.createLiveArea().pin();
+  submitArea.write(`📡 Submitting answer for 📯 ${year} 🌅 ${day} 🧩 ${part}...`);
+
+  try {
+    const result = await submitPuzzleAnswer(year, day, part, answer);
+
+    if(result.success) {
+      submitArea.write(chalk.green(`📡 The answer for 📯 ${year} 🌅 ${day} 🧩 ${part} has been submitted!`));
+    } else {
+      const UNSUCCESSFUL_SUBMISSION_MESSAGES = {
+        'incorrect': chalk.yellow(`📡 The answer for 📯 ${year} 🌅 ${day} 🧩 ${part} was not accepted as correct.`),
+        'timeout': chalk.redBright(`⏲ The answer for 📯 ${year} 🌅 ${day} 🧩 ${part} could not be submitted due to rate-limiting.`),
+        'solved': chalk.green(`💾 The answer for 📯 ${year} 🌅 ${day} 🧩 ${part} was already submitted and accepted. Move on to the next puzzle!`),
+        'unknown': chalk.yellow(`💾 The answer for 📯 ${year} 🌅 ${day} 🧩 ${part} could not be submitted (not sure why).`),
+      };
+      submitArea.write(UNSUCCESSFUL_SUBMISSION_MESSAGES[result.reason]);
+    }
+  } catch(err) {
+    console.error(err);
+    submitArea.write(chalk.redBright(`📡 Submitting answer for 📯 ${year} 🌅 ${day} 🧩 ${part} failed.`));
+  }
+
+  submitArea.close();
 }
 
 async function createPuzzle(year, day) {
