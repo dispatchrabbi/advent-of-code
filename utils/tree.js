@@ -12,6 +12,15 @@ class TreeNode {
 
   addChild(childNode) {
     this._children.push(childNode);
+    childNode._parent = this;
+  }
+
+  findChild(predicate) {
+    return this._children.find(predicate);
+  }
+
+  hasChild(predicate) {
+    return this.findChild(predicate) !== undefined;
   }
 
   pathFromRoot() {
@@ -41,7 +50,6 @@ class Tree {
 
       const ret = fn(currentNode);
       if(ret === false) {
-        console.debug(`SCREECH`);
         break;
       }
 
