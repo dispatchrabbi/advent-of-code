@@ -18,6 +18,10 @@ function adjacent({x, y}) {
   ];
 }
 
+function isAdjacent({x: x1, y: y1}, {x: x2, y: y2}) {
+  return (Math.abs(x1 - x2) <= 1) && (Math.abs(y1 - y2) <= 1);
+}
+
 function orthogonal({x, y}) {
   return [
                         { x: x  , y: y+1 },
@@ -29,6 +33,6 @@ function orthogonal({x, y}) {
 export {
   coords2str,
   str2coords,
-  adjacent,
+  adjacent, isAdjacent,
   orthogonal,
 };
