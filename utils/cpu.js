@@ -28,7 +28,7 @@ class CPU {
     this.flags = this.resetFlags();
 
     while(!this.flags.halt) {
-      await this._step();
+      await this.step();
     }
   }
 
@@ -36,7 +36,7 @@ class CPU {
     return this.counter >= 0 && this.counter < this.instructions.length;
   }
 
-  async _step() {
+  async step() {
     this.flags = this.resetFlags();
 
     const instruction = this._getInstruction();
@@ -48,7 +48,7 @@ class CPU {
     if(!(this.flags.jump || this.flags.halt)) {
       this.counter++;
     }
-    if(!this._counterInBounds) {
+    if(!this._counterInBounds()) {
       this.flags.halt = true;
     }
   }
@@ -62,7 +62,7 @@ class CPU {
   }
 
   statusString() {
-    const instr = this._getInstruction();
+    const instr = this._getInstruction() || { opcode: 'invalid counter', args: [] };
     const counter = `#${this.counter} (${instr.opcode} ${instr.args.join(', ')})`;
     const flags = Object.keys(this.flags).map(flag => this.flags[flag] ? chalk.yellow(flag) : chalk.gray(flag)).join('|');
     const registers = Object.entries(this.registers).map(([key, val]) => `${key}: ${val}`).join(', ');
