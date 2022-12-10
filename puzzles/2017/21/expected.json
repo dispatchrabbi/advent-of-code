@@ -1,0 +1,4 @@
+[
+  { "part": 1, "file": "test.txt", "output": 12, "options": { "rounds": 2 } },
+  { "part": 2, "file": "test.txt", "output": 12, "options": { "rounds": 2 } }
+]
