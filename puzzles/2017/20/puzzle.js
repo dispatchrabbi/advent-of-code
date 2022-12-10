@@ -69,19 +69,19 @@ function tick(particles, { zbuffer = false, collision = false }) {
 }
 
 function findGonerParticles(particles) {
-  const gonerParticles = [];
+  const gonerParticles = new Set();
   for(let a = 0; a < particles.length; ++a) {
     for(let b = a + 1; b < particles.length; ++b) {
       const cmp = compare(particles[a], particles[b]);
       if(cmp === -1) {
-        gonerParticles.push(particles[a].ix);
+        gonerParticles.add(particles[a].ix);
       } else if(cmp === 1) {
-        gonerParticles.push(particles[b].ix);
+        gonerParticles.add(particles[b].ix);
       }
     }
   }
 
-  return gonerParticles;
+  return [...gonerParticles];
 }
 
 function findCollidingParticles(particles) {
