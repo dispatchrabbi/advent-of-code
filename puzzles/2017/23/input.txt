@@ -1,11 +1,11 @@
-set b 3
+set b 67
 set c b
 jnz a 2
 jnz 1 5
-mul b 4
-sub b -2
+mul b 100
+sub b -100000
 set c b
-sub c -2
+sub c -17000
 set f 1
 set d 2
 set e 2
@@ -28,5 +28,5 @@ set g b
 sub g c
 jnz g 2
 jnz 1 3
-sub b -5
+sub b -17
 jnz 1 -23
