@@ -100,16 +100,28 @@ class MapWithDefaultValue {
   }
 
   set(key, value) {
-    this._map.set(key, value);
-    return this;
+    return this._map.set(key, value);
   }
 
-  size() {
+  get size() {
     return this._map.size;
+  }
+
+  entries() {
+    return this._map.entries();
+  }
+
+  keys() {
+    return this._map.keys();
+  }
+
+  values() {
+    return this._map.values();
   }
 }
 
 export {
   GraphNode,
-  Graph
+  Graph,
+  MapWithDefaultValue,
 };
