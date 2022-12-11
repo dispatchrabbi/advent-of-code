@@ -15,10 +15,7 @@ async function* part1(input, options = {}) {
 
   log.debug(formatMonkeyHoldings(monkeys, NUMBER_OF_ROUNDS));
 
-  monkeys = monkeys.sort((a, b) => {
-    const result = b.inspectionCount - a.inspectionCount;
-    return result > 0n ? 1 : result < 0n ? -1 : 0;
-  });
+  monkeys = monkeys.sort((a, b) => b.inspectionCount - a.inspectionCount);
   const monkeyBusinessLevel = monkeys[0].inspectionCount * monkeys[1].inspectionCount;
 
   return Number(monkeyBusinessLevel);
@@ -38,10 +35,7 @@ async function* part2(input, options = {}) {
 
   log.debug(formatMonkeyInspections(monkeys, NUMBER_OF_ROUNDS));
 
-  monkeys = monkeys.sort((a, b) => {
-    const result = b.inspectionCount - a.inspectionCount;
-    return result > 0n ? 1 : result < 0n ? -1 : 0;
-  });
+  monkeys = monkeys.sort((a, b) => b.inspectionCount - a.inspectionCount);
   const monkeyBusinessLevel = monkeys[0].inspectionCount * monkeys[1].inspectionCount;
 
   return Number(monkeyBusinessLevel);
@@ -60,9 +54,9 @@ function parseInput(input) {
     const [ idLine, itemsLine, operationLine, testLine, trueLine, falseLine ] = monkey.split('\n');
 
     const id = +idLine[7]; // there are fewer than 10 monkeys in the input, so we can just pull the single char
-    const items = itemsLine.slice('  Starting items: '.length).split(', ').map(x => BigInt(x));
-    const opParts = operationLine.slice('  Operation: new = '.length).split(' ').map(x => isNumeric(x) ? BigInt(x) : x);
-    const test = BigInt(testLine.slice('  Test: divisible by '.length));
+    const items = itemsLine.slice('  Starting items: '.length).split(', ').map(x => +x);
+    const opParts = operationLine.slice('  Operation: new = '.length).split(' ').map(x => isNumeric(x) ? +x : x);
+    const test = +testLine.slice('  Test: divisible by '.length);
     const trueDest = +trueLine.slice('    If true: throw to monkey '.length);
     const falseDest = +falseLine.slice('    If false: throw to monkey '.length);
 
@@ -71,7 +65,7 @@ function parseInput(input) {
       items,
       operation: { symbol: opParts[1], args: [ opParts[0], opParts[2] ] },
       test, trueDest, falseDest,
-      inspectionCount: 0n,
+      inspectionCount: 0,
     };
   });
 
@@ -79,7 +73,7 @@ function parseInput(input) {
 }
 
 function doARoundOfMonkeyBusiness(monkeys, takeAChillPill = true, debug = false) {
-  const monkeyGcd = monkeys.reduce(((product, m) => product * m.test), 1n);
+  const monkeyGcd = product(monkeys.map(m => m.test));
 
   for(let monkey of monkeys) {
     debug && log.debug(`Monkey ${monkey.id}:`);
@@ -91,14 +85,14 @@ function doARoundOfMonkeyBusiness(monkeys, takeAChillPill = true, debug = false)
       debug && log.debug(`    Worry level ${monkey.operation.symbol === '*' ? 'is multiplied by' : 'increases'} by ${monkey.operation.args[1] === 'old' ? 'itself' : monkey.operation.args[1]} to ${item}.`);
 
       if(takeAChillPill) {
-        item = item / 3n; // no Math.floor() needed for BigInts
+        item = Math.floor(item / 3);
         debug && log.debug(`    Monkey gets bored with item. Worry level is divided by 3 to ${item}.`);
       } else {
         item = item % monkeyGcd;
         debug && log.debug(`    Monkey gets bored with item. Worry level is mod'd by Monkey GCD (${monkeyGcd}) to ${item}.`);
       }
 
-      const passesTest = item % monkey.test === 0n;
+      const passesTest = item % monkey.test === 0;
       debug && log.debug(`    Current worry level ${passesTest ? 'is' : 'is not'} divisible by ${monkey.test}.`)
 
       monkeys[passesTest ? monkey.trueDest : monkey.falseDest].items.push(item);
@@ -113,9 +107,9 @@ function doMonkeyOperation(item, operation) {
   const args = operation.args.map(arg => arg === 'old' ? item : arg);
 
   if(operation.symbol === '+') {
-    return args[0] + args[1];
+    return sum(args);
   } else if(operation.symbol === '*') {
-    return args[0] * args[1];
+    return product(args);
   } else {
     throw new Error(`Unknown monkey operation ${operation.symbol}: ${operation}`);
   }
