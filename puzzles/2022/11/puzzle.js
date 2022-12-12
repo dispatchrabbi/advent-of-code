@@ -73,7 +73,7 @@ function parseInput(input) {
 }
 
 function doARoundOfMonkeyBusiness(monkeys, takeAChillPill = true, debug = false) {
-  const monkeyGcd = product(monkeys.map(m => m.test));
+  const monkeyLcm = product(monkeys.map(m => m.test));
 
   for(let monkey of monkeys) {
     debug && log.debug(`Monkey ${monkey.id}:`);
@@ -88,8 +88,8 @@ function doARoundOfMonkeyBusiness(monkeys, takeAChillPill = true, debug = false)
         item = Math.floor(item / 3);
         debug && log.debug(`    Monkey gets bored with item. Worry level is divided by 3 to ${item}.`);
       } else {
-        item = item % monkeyGcd;
-        debug && log.debug(`    Monkey gets bored with item. Worry level is mod'd by Monkey GCD (${monkeyGcd}) to ${item}.`);
+        item = item % monkeyLcm;
+        debug && log.debug(`    Monkey gets bored with item. Worry level is mod'd by Monkey GCD (${monkeyLcm}) to ${item}.`);
       }
 
       const passesTest = item % monkey.test === 0;
