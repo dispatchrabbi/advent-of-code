@@ -32,6 +32,10 @@ class Graph {
     this._nodes.add(node);
   }
 
+  findNode(data) {
+    [...this._nodes.values].find(node => node.matchesData(data));
+  }
+
   aStar(isGoalFn, heuristicFn, startNode = this.root) {
     function reconstructPath(cameFrom, current) {
       const path = [ current ];
