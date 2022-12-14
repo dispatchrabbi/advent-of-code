@@ -65,7 +65,7 @@ function runFallingSandSimulationWithFloor(walls, source = { x: 500, y: 0 }, flo
     occupiedSpaces.set(coords2str(sand), MATERIALS.SAND);
     grains++;
 
-    log.debug(grains + '\n' + formatFallingSand(occupiedSpaces));
+    // log.debug(grains + '\n' + formatFallingSand(occupiedSpaces));
 
     if(sand.x === 500 && sand.y === 0) {
       break;
