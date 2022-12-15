@@ -30,9 +30,14 @@ function orthogonal({x, y}) {
   ];
 }
 
+function manhattan({x: x1, y: y1}, {x: x2, y: y2}) {
+  return Math.abs(x2 - x1) + Math.abs(y2 - y1);
+}
+
 export {
   coords2str,
   str2coords,
   adjacent, isAdjacent,
   orthogonal,
+  manhattan,
 };
