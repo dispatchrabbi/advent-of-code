@@ -1,4 +1,4 @@
 [
   { "part": 1, "file": "test.txt", "output": 26, "options": { "y": 10 } },
-  { "part": 2, "file": "test.txt", "output": 56000011, "options": { "max": 4000000 } }
+  { "part": 2, "file": "test.txt", "output": 56000011, "options": { "bounds": 20 } }
 ]

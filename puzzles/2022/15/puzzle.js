@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
-import { manhattan } from '#utils/grid';
+import { coords2str, manhattan, str2coords } from '#utils/grid';
 
 const log = loglevel.getLogger('puzzle');
 
@@ -12,10 +12,12 @@ async function* part1(input, options = { y: 2000000 }) {
   return beaconlessSpots.length;
 }
 
-async function* part2(input, options = {}) {
-  const parsed = parseInput(input);
+async function* part2(input, options = { bounds: 4000000 }) {
+  const sensors = parseInput(input);
 
-  return parsed;
+  const lostBeacon = findLostBeacon(sensors, options.bounds);
+
+  return lostBeacon.x * 4000000 + lostBeacon.y;
 }
 
 function parseInput(input) {
@@ -68,6 +70,44 @@ function normalizeRanges(ranges) {
   }
 
   return ranges;
+}
+
+function findLostBeacon(sensors, bounds = Infinity) {
+  // so... if there's only one lost beacon in this whole field,
+  // it's going to be at radius + 1 units from a sensor
+  // and in fact it's going to be at radius + 1 units from 4 sensors
+  // and no closer than radius + 1 to any other sensor
+
+  sensors = sensors.map(s => ({...s, radius: manhattan(s.location, s.beacon)}));
+
+  const coordsHit = new Map();
+  for(let sensor of sensors) {
+    const coords = findCoordinatesAtRadius(sensor.location, sensor.radius + 1)
+      .filter(coord => (
+        (coord.x >= 0 && coord.x <= bounds && coord.y >= 0 && coord.y <= bounds) &&
+        sensors.every(s => manhattan(coord, s.location) >= (s.radius + 1)) // no sensor is close enough to this point to have detected it
+      ));
+
+    for(let coord of coords) {
+      const nearbySensors = sensors.filter(s => manhattan(coord, s.location) === (s.radius + 1));
+      if(nearbySensors.length >= 4) {
+        return coord;
+      }
+    }
+  }
+}
+
+function findCoordinatesAtRadius(center, radius) {
+  const coords = [];
+  for(let i = 0; i < radius; ++i) {
+    coords.push(
+      { x: center.x + i, y: center.y + (radius - i) }, // NE side of the square
+      { x: center.x + (radius - i), y: center.y - i }, // SE side of the square
+      { x: center.x - i, y: center.y - (radius - i) }, // SW side of the square
+      { x: center.x - (radius - i), y: center.y + i }  // NW side of the square
+    );
+  }
+  return coords;
 }
 
 export default { part1, part2 };
