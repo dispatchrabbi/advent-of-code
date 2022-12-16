@@ -8,13 +8,21 @@ const log = loglevel.getLogger('puzzle');
 async function* part1(input, options = { y: 2000000 }) {
   const sensors = parseInput(input);
 
-  const beaconlessSpots = findSpotsOnRowWithNoBeacons(sensors, options.y);
-  return beaconlessSpots.length;
+  const beaconlessRanges = findRangesOnRowWithNoBeacons(sensors, options.y);
+  log.debug(beaconlessRanges);
+
+  const spots = [];
+  for(let [min, max] of beaconlessRanges) {
+    for(let i = min; i <= max; ++i) { spots.push(i); }
+  }
+  return spots.length;
 }
 
 async function* part2(input, options = { bounds: 4000000 }) {
   const sensors = parseInput(input);
 
+  // const lostBeacon = findLostBeaconWithScanLines(sensors, options.bounds);
+  // const lostBeacon = findLostBeaconWithRadii(sensors, options.bounds);
   const lostBeacon = findLostBeacon(sensors);
 
   return lostBeacon.x * 4000000 + lostBeacon.y;
@@ -35,7 +43,7 @@ function parseInput(input) {
   });
 }
 
-function findSpotsOnRowWithNoBeacons(sensors, y) {
+function findRangesOnRowWithNoBeacons(sensors, y) {
   let ranges = [];
 
   for(let sensor of sensors) {
@@ -54,11 +62,7 @@ function findSpotsOnRowWithNoBeacons(sensors, y) {
 
   ranges = normalizeRanges(ranges);
 
-  const spots = [];
-  for(let [min, max] of ranges) {
-    for(let i = min; i <= max; ++i) { spots.push(i); }
-  }
-  return spots;
+  return ranges;
 }
 
 function normalizeRanges(ranges) {
@@ -158,6 +162,21 @@ function findCoordinatesAtRadius(center, radius) {
     );
   }
   return coords;
+}
+
+function findLostBeaconWithScanLines(sensors, bounds = 4000000) {
+  const beaconStrings = sensors.map(s => coords2str(s.beacon));
+
+  for(let y = 0; y <= bounds; ++y) {
+    let ranges = findRangesOnRowWithNoBeacons(sensors, y);
+    if(ranges.length < 2) { continue; }
+    ranges = ranges.map(r => [ Math.max(r[0], 0), Math.min(r[1], bounds)]);
+
+    const possibleLostBeacon = { x: ranges[0][1] + 1, y };
+    if(!beaconStrings.includes(coords2str(possibleLostBeacon))) {
+      return possibleLostBeacon;
+    }
+  }
 }
 
 export default { part1, part2 };
