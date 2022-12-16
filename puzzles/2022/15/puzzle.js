@@ -15,7 +15,7 @@ async function* part1(input, options = { y: 2000000 }) {
 async function* part2(input, options = { bounds: 4000000 }) {
   const sensors = parseInput(input);
 
-  const lostBeacon = findLostBeacon(sensors, options.bounds);
+  const lostBeacon = findLostBeacon(sensors);
 
   return lostBeacon.x * 4000000 + lostBeacon.y;
 }
@@ -24,9 +24,13 @@ function parseInput(input) {
   return input.trim().split('\n').map(line => {
     // Sensor at x=2, y=18: closest beacon is at x=-2, y=15
     const ints = line.match(/[-]?\d+/g);
+    const location = { x: +ints[0], y: +ints[1] };
+    const beacon = { x: +ints[2], y: +ints[3] };
+
     return {
-      location: { x: +ints[0], y: +ints[1] },
-      beacon: { x: +ints[2], y: +ints[3] },
+      location,
+      beacon,
+      radius: manhattan(location, beacon)
     };
   });
 }
@@ -35,9 +39,8 @@ function findSpotsOnRowWithNoBeacons(sensors, y) {
   let ranges = [];
 
   for(let sensor of sensors) {
-    const radius = manhattan(sensor.location, sensor.beacon);
     const verticalDistance = Math.abs(sensor.location.y - y);
-    const horizontalMax = radius - verticalDistance;
+    const horizontalMax = sensor.radius - verticalDistance;
 
     if(horizontalMax <= 0) { continue; }
 
@@ -72,13 +75,60 @@ function normalizeRanges(ranges) {
   return ranges;
 }
 
-function findLostBeacon(sensors, bounds = Infinity) {
+function findLostBeacon(sensors) {
+  // so... if there's only one lost beacon in this whole field,
+  // it's going to be radius + 1 units from 4 sensors,
+  // which means it'll be sandwiched between the "circumerences" of two sensors (which makes a line at 45deg)
+  // and it'll be sandwiched that way between two such sets of sensors, with the sandwich lines perpendicular
+  // so... let's find two lines going perpendicular to each other
+
+  const slashLines = []; // storing C in equations of the form y = x + C, or y - x = C
+  const backslashLines = []; // storing K in equations of the form y = -x + K, or y + x = K
+
+  for(let i = 0; i < sensors.length; ++i) {
+    for(let j = i + 1; j < sensors.length; ++j) {
+      // see if these sensors are the appropriate distance to be on a line with each other and allow a 1 space gap
+      if(sensors[i].radius + sensors[j].radius + 2 === manhattan(sensors[i].location, sensors[j].location)) {
+        // do a sort to guarantee that s1.location.x < s2.location.x
+        const [ s1, s2 ] = [ sensors[i], sensors[j] ].sort((a, b) => a.location.x - b.location.x);
+        const [ l1, l2 ] = [ s1.location, s2.location ];
+
+        if(Math.sign(l2.x - l1.x) === Math.sign(l2.y - l1.y)) {
+          // the edge is \, so we need to determine K for the edge line
+          const k = (l1.x + l1.y) + (s1.radius + 1);
+          backslashLines.push(k);
+        } else {
+          // the edge is /, so we need to determine C for the edge line
+          const c = (l1.y - l1.x) - (s1.radius + 1);
+          slashLines.push(c);
+        }
+      }
+    }
+  }
+
+  // so now, we compute the intersections of each of our two sets of lines
+  // and make sure that intersection is too far away from all the sensors
+  for(let c of slashLines) {
+    for(let k of backslashLines) {
+      // y - x = C; y + x = K
+      // 2y = C + K; y = (C + K) / 2
+      // 2x = K - C; x = (K - C) / 2
+      const [ y, x ] = [ (c + k) / 2, (k - c) / 2 ];
+
+      if(Math.floor(x) !== x || Math.floor(y) !== y) { continue; } // no non-integer solutions, please
+
+      if(sensors.every(s => manhattan(s.location, { x, y }) > s.radius)) {
+        return { x, y };
+      }
+    }
+  }
+}
+
+function findLostBeaconWithRadii(sensors, bounds = Infinity) {
   // so... if there's only one lost beacon in this whole field,
   // it's going to be at radius + 1 units from a sensor
   // and in fact it's going to be at radius + 1 units from 4 sensors
   // and no closer than radius + 1 to any other sensor
-
-  sensors = sensors.map(s => ({...s, radius: manhattan(s.location, s.beacon)}));
 
   const coordsHit = new Map();
   for(let sensor of sensors) {
