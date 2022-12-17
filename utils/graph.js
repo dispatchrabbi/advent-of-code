@@ -1,16 +1,18 @@
 import { deepEquals } from '#utils/obj';
 
 class GraphNode {
-  constructor(data = {}) {
+  constructor(id, data = {}) {
+    this._id = id;
     this._data = data;
     this._edges = [];
   }
 
+  get id() { return this._id; }
   get data() { return this._data; }
   get edges() { return this._edges; }
 
-  addEdge(neighbor, cost, metadata) {
-    this.edges.push({ neighbor, cost, metadata });
+  addEdge(neighbor, cost = 1, metadata = {}) {
+    this._edges.push({ neighbor, cost, metadata });
   }
 
   matchesData(data) {
@@ -19,24 +21,29 @@ class GraphNode {
 }
 
 class Graph {
-  constructor(root) {
-    this._root = root;
-
-    this._nodes = new Set([root]);
+  constructor() {
+    this._nodes = new Map();
   }
 
   get root() { return this._root; }
-  get nodes() { return this._nodes; }
+  get nodes() { return [ ...this._nodes.values() ]; }
 
   addNode(node) {
-    this._nodes.add(node);
+    this._nodes.set(node.id, node);
+  }
+
+  getNode(id) {
+    return this._nodes.get(id);
   }
 
   findNode(data) {
-    [...this._nodes.values].find(node => node.matchesData(data));
+    for(let node of this._nodes.values()) {
+      if(node.matchesData(data)) { return node; }
+    }
+    return null;
   }
 
-  aStar(isGoalFn, heuristicFn, startNode = this.root) {
+  aStar(isGoalFn, heuristicFn, startNode) {
     function reconstructPath(cameFrom, current) {
       const path = [ current ];
       while(cameFrom.has(current)) {
@@ -87,7 +94,7 @@ class Graph {
     return false;
   }
 
-  dijkstra(isGoalFn, startNode = this.root) {
+  dijkstra(isGoalFn, startNode) {
     return this.aStar(isGoalFn, () => 0, startNode);
   }
 }
