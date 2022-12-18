@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
 import { Graph, GraphNode } from '#utils/graph';
-import { pairs } from '#utils/arr';
+import { combine, permute, uniquify } from '#utils/arr';
 
 const log = loglevel.getLogger('puzzle');
 
@@ -23,9 +23,11 @@ async function* part2(input, options = {}) {
   const caveGraph = buildCaveGraph(valves);
   connectRoomsWithValves(caveGraph, caveGraph.getNode('AA'));
 
-  const optimalPressureRelease = findOptimalPressureReleaseWithAnElephant(26, caveGraph, caveGraph.getNode('AA'));
+  const totalPressure = findOptimalPressureReleaseWithAnElephant(caveGraph);
+  return totalPressure;
 
-  return optimalPressureRelease;
+  // const totalPressure = findOptimalPressureReleaseWithAnElephant2(caveGraph);
+  // return totalPressure;
 }
 
 function parseInput(input) {
@@ -108,52 +110,145 @@ function findOptimalPressureRelease(minutesLeft, graph, startNode, valvesToVisit
   return (startNode.data.flowRate * minutesLeft) + optimalPressureRelease;
 }
 
-function findOptimalPressureReleaseWithAnElephant(minutesLeft, graph, startNode, valvesToVisit = null, depth = 0) {
-  if(valvesToVisit === null) {
-    valvesToVisit = graph.nodes.filter(node => node.id !== startNode.id);
+const memo = new Map();
+const hashState = state => ([
+  state.minutesLeft,
+  state.openValves.sort().join(','),
+  state.totalFlowRate,
+  state.human.id,
+  state.elephant.id,
+].join(':'));
+
+function findOptimalPressureReleaseWithAnElephant(connectedGraph, startNode = connectedGraph.getNode('AA')) {
+  const valvesToVisit = connectedGraph.nodes.filter(node => node.id !== startNode.id);
+  const valveCombinations = combine(valvesToVisit);
+
+  let maxSoFar = -Infinity;
+  for(let humanValves of valveCombinations) {
+    const elephantValves = valvesToVisit.filter(v => !humanValves.includes(v));
+
+    const humanRelease = findOptimalPressureRelease(26, connectedGraph, startNode, humanValves);
+    const elephantRelease = findOptimalPressureRelease(26, connectedGraph, startNode, elephantValves);
+
+    if(humanRelease + elephantRelease > maxSoFar) {
+      // log.debug(`${maxSoFar} < ${humanRelease + elephantRelease}: ${humanRelease} (${humanValves.map(n => n.id)}) + ${elephantRelease} (${elephantValves.map(n => n.id)})`);
+      maxSoFar = humanRelease + elephantRelease;
+    }
   }
 
-  log.debug(' '.repeat(depth * 2), startNode.id, valvesToVisit.map(n => n.id));
+  return maxSoFar;
+}
 
-  const valvesAndCosts = valvesToVisit.map(node => ({
-    id: node.id,
-    cost: startNode.edges.find(e => e.neighbor.id === node.id).cost,
-  })).filter(({ cost }) => cost < minutesLeft);
+function findOptimalPressureReleaseWithAnElephant2(graph) {
+  let totalPressureReleased = 0;
 
-  let optimalPressureRelease = 0;
-  if(valvesAndCosts.length >= 2) {
-    const optimalPressureReleaseObj = pairs(valvesAndCosts).map(([vc1, vc2]) => {
-      const release1 = findOptimalPressureReleaseWithAnElephant(
-        minutesLeft - vc1.cost,
-        graph,
-        graph.getNode(vc1.id),
-        valvesToVisit.filter(v => v.id !== vc1.id && v.id !== vc2.id),
-        depth + 1
-      );
+  let minutesLeft = 26;
+  const openValves = [];
+  let totalFlowRate = 0;
 
-      const release2 = findOptimalPressureReleaseWithAnElephant(
-        minutesLeft - vc2.cost,
-        graph,
-        graph.getNode(vc2.id),
-        valvesToVisit.filter(v => v.id !== vc1.id && v.id !== vc2.id),
-        depth + 1
-      );
+  let human = graph.getNode('AA');
+  let elephant = graph.getNode('AA');
 
-      return { nodes: [ vc1.id, vc2.id ], release: release1 + release2 };
-    }).sort((a, b) => b.release - a.release)[0];
-    optimalPressureRelease = optimalPressureReleaseObj.release;
-  } else if(valvesAndCosts.length === 1) {
-    const { id: nextId, cost: nextCost } = valvesAndCosts[0];
-    optimalPressureRelease = findOptimalPressureReleaseWithAnElephant(
-      minutesLeft - nextCost,
-      graph,
-      graph.getNode(nextId),
-      [],
-      depth + 1
-    );
+  while(minutesLeft > 0) {
+    log.debug(`== Minute ${27 - minutesLeft} ==`);
+    log.debug(`Valves [${openValves.join(', ')}] are open, releasing ${totalFlowRate} pressure.`);
+    totalPressureReleased += totalFlowRate;
+
+    // figure out the next move for the human and elephant
+    const humanOptions = getRankedBestNextValves(graph, minutesLeft, openValves, human);
+    const elephantOptions = getRankedBestNextValves(graph, minutesLeft, openValves, elephant);
+    let nextHumanValve = humanOptions[0];
+    let nextElephantValve = elephantOptions[0];
+    if(nextHumanValve && nextElephantValve && nextHumanValve.valve === nextElephantValve.valve) {
+      if(nextElephantValve.value > nextHumanValve.value) {
+        nextHumanValve = humanOptions[1];
+      } else if(nextElephantValve.value < nextHumanValve.value) {
+        nextElephantValve = elephantOptions[1];
+      } else if(nextElephantValve.value === nextHumanValve.value) {
+        if(elephantOptions[1] && humanOptions[1] && elephantOptions[1].value > humanOptions[1].value) {
+          nextElephantValve = elephantOptions[1];
+        } else {
+          nextHumanValve = humanOptions[1];
+        }
+      }
+    }
+
+    if(nextHumanValve) {
+      if(nextHumanValve.valve === human) {
+        // open the valve
+        log.debug(`Human opens valve ${human.id}.`);
+        openValves.push(human.id);
+        totalFlowRate += human.data.flowRate;
+      } else {
+        // move the human
+        log.debug(humanOptions.map(o => ({ id: o.valve.id, value: o.value, next: o.path[1]?.id })));
+        log.debug(`Human moves to ${nextHumanValve.path[1].id}.`);
+        human = nextHumanValve.path[1];
+      }
+    } // else don't move at all
+
+    if(nextElephantValve) {
+      if(nextElephantValve.valve === elephant) {
+        // open the valve
+        log.debug(`Elephant opens valve ${elephant.id}.`);
+        openValves.push(elephant.id);
+        totalFlowRate += elephant.data.flowRate;
+      } else {
+        // move the elephant
+        log.debug(elephantOptions.map(o => ({ id: o.valve.id, value: o.value, next: o.path[1]?.id })));
+        log.debug(`Elephant moves to ${nextElephantValve.path[1].id}.`);
+        elephant = nextElephantValve.path[1];
+      }
+    } // else don't move at all
+
+    log.debug('\n');
+    minutesLeft--;
   }
 
-  return (startNode.data.flowRate * minutesLeft) + optimalPressureRelease;
+  return totalPressureReleased;
+}
+
+function getRankedBestNextValves(graph, minutesLeft, openValves, currentNode) {
+  const valvesToOpen = graph.nodes
+    .filter(n => n.data.flowRate > 0 && !openValves.includes(n.id))
+    .map(valve => {
+      const { path, cost } = graph.dijkstra(node => node === valve, currentNode);
+      return {
+        valve,
+        path,
+        cost,
+        value: valve.data.flowRate * (minutesLeft - (cost + 1)),
+      };
+    })
+    .filter(v => (v.cost + 1) < minutesLeft);
+
+  const sortedValvesToOpen = valvesToOpen.sort((a, b) => b.value - a.value);
+
+  return sortedValvesToOpen;
+}
+
+function getPathToBestNextValve(graph, minutesLeft, openValves, currentNode, rank = 0) {
+  // log.debug('== getPath: ', minutesLeft, ' ==');
+  const paths = graph.nodes
+    .filter(n => n.data.flowRate > 0 && !openValves.includes(n.id))
+    .map(valve => {
+      const { path, cost } = graph.dijkstra(node => node === valve, currentNode);
+      return { id: valve.id, flowRate: valve.data.flowRate, cost, path };
+    })
+    .sort((a, b) => {
+      const aRank = a.flowRate * (minutesLeft - (a.cost + 1));
+      const bRank = b.flowRate * (minutesLeft - (b.cost + 1));
+      // log.debug('a: ', a.id, aRank, a.flowRate, a.cost, a.path.map(n => n.id).join(','));
+      // log.debug('b: ', b.id, bRank, b.flowRate, b.cost, b.path.map(n => n.id).join(','));
+      // log.debug(bRank > aRank ? b.id : aRank > bRank ? a.id : 'tie');
+      return bRank > aRank ? 1 : aRank > bRank ? -1 : (a.flowRate - b.flowRate);
+    });
+
+    log.debug(`== getPath from ${currentNode.id} @ ${minutesLeft} ==`);
+    paths.forEach(path => log.debug(`${path.id}: ${path.flowRate * (minutesLeft - path.cost + 1)}`));
+    log.debug('');
+
+    return paths[rank];
 }
 
 export default { part1, part2 };

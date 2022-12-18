@@ -40,7 +40,7 @@ function permute(arr) {
 
   let permutations = [];
   for(let el of arr) {
-    permutations = permutations.concat(...permute(arr.filter(x => x !== el)).map(subpermutation => [el, ...subpermutation]));
+    permutations = permutations.concat(permute(arr.filter(x => x !== el)).map(subpermutation => [el, ...subpermutation]));
   }
 
   return permutations;
@@ -63,16 +63,6 @@ function combine(arr) {
   return combinations;
 }
 
-function pairs(arr) {
-  const out = [];
-  for(let i = 0; i < arr.length; ++i) {
-    for(let j = i + 1; j < arr.length; ++j) {
-      out.push([ arr[i], arr[j] ]);
-    }
-  }
-  return out;
-}
-
 function shuffle(arr) {
   const shuffled = [];
   const clone = arr.slice();
@@ -93,7 +83,7 @@ function cmp(a, b) {
 export {
   uniquify, intersect,
   transpose, rotate,
-  permute, combine, pairs,
+  permute, combine,
   shuffle,
   cmp,
 };

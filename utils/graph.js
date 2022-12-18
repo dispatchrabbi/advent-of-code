@@ -15,6 +15,10 @@ class GraphNode {
     this._edges.push({ neighbor, cost, metadata });
   }
 
+  getEdge(neighbor) {
+    return this._edges.find(e => e.neighbor === neighbor);
+  }
+
   matchesData(data) {
     return deepEquals(data, this.data);
   }
