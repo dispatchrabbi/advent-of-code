@@ -10,6 +10,14 @@ function str2coords(str) {
   };
 }
 
+function arr2coords([x, y]) {
+  return { x, y };
+}
+
+function coords2arr({x, y}) {
+  return [ x, y ];
+}
+
 function adjacent({x, y}) {
   return [
     { x: x-1, y: y+1 }, { x: x  , y: y+1 }, { x: x+1, y: y+1 },
@@ -35,8 +43,7 @@ function manhattan({x: x1, y: y1}, {x: x2, y: y2}) {
 }
 
 export {
-  coords2str,
-  str2coords,
+  coords2str, str2coords, arr2coords, coords2arr,
   adjacent, isAdjacent,
   orthogonal,
   manhattan,
