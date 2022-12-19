@@ -17,9 +17,11 @@ async function* part1(input, options = {}) {
 async function* part2(input, options = {}) {
   const cubes = parseInput(input);
 
-  const exposed = findExteriorSurfaces(cubes);
+  const exteriorSurfaceArea = findExteriorSurfaces(cubes);
+  return exteriorSurfaceArea;
 
-  return exposed.length;
+  // const exposed = findExteriorSurfacesDFS(cubes);
+  // return exposed.length;
 }
 
 function parseInput(input) {
@@ -38,7 +40,7 @@ function findExposedSurfaces(cubes) {
   return surfaces;
 }
 
-function findExteriorSurfaces(cubes) {
+function findExteriorSurfacesDFS(cubes) {
   let surfaces = [];
   let xMin = Infinity, xMax = -Infinity;
   let yMin = Infinity, yMax = -Infinity;
@@ -101,6 +103,58 @@ function findExteriorSurfaces(cubes) {
   }
 
   return exteriorSurfaces;
+}
+
+function findExteriorSurfaces(cubes) {
+  let xMin = Infinity, xMax = -Infinity;
+  let yMin = Infinity, yMax = -Infinity;
+  let zMin = Infinity, zMax = -Infinity;
+
+  for(let cube of cubes) {
+    xMin = Math.min(xMin, cube.x);
+    xMax = Math.max(xMax, cube.x);
+    yMin = Math.min(yMin, cube.y);
+    yMax = Math.max(yMax, cube.y);
+    zMin = Math.min(zMin, cube.z);
+    zMax = Math.max(zMax, cube.z);
+  }
+
+  // we're going to flood fill from the outside in
+  const fill = [];
+  for(let x = xMin - 1; x <= xMax + 1; ++x) {
+    for(let y = yMin - 1; y <= yMax + 1; ++y) {
+      for(let z = zMin - 1; z <= zMax + 1; ++z) {
+        if(x === xMin - 1 || x === xMax + 1) {
+          fill.push({x, y, z}); // floor and ceiling
+        } else if((y === yMin - 1 || y === yMax + 1) || (z === zMin - 1 || z === zMax + 1)) {
+          fill.push({x, y, z}); // walls
+        }
+      }
+    }
+  }
+
+  let surfaceArea = 0;
+
+  const seen = [];
+  while(fill.length > 0) {
+    const toExamine = fill.shift();
+    let neighbors = orthogonal3d(toExamine);
+    neighbors = neighbors.filter(s => (
+      s.x >= (xMin - 1) && s.x <= (xMax + 1) &&
+      s.y >= (yMin - 1) && s.y <= (yMax + 1) &&
+      s.z >= (zMin - 1) && s.z <= (zMax + 1)
+    )); // wrong direction
+    neighbors = neighbors.filter(s => !includesCube(seen, s)); // already looked at these
+    neighbors = neighbors.filter(s => !includesCube(fill, s)); // already in the queue
+
+    const keepFilling = neighbors.filter(s => !includesCube(cubes, s));
+    surfaceArea += (neighbors.length - keepFilling.length);
+
+    fill.push(...keepFilling);
+    seen.push(toExamine);
+  }
+
+  return surfaceArea;
 }
 
 function includesCube(cubes, subject) {
