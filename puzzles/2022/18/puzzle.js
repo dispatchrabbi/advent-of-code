@@ -75,30 +75,29 @@ function findExteriorSurfaces(cubes) {
   const questionableCubes = uniquify(questionableSurfaces, areCubesEqual);
 
   for(let surface of questionableCubes) {
-    // TODO: this is a BFS right now and that takes FOREVER - it should be a DFS
-    const examined = [ surface ];
-    let toExamine = [ surface ];
-    while(toExamine.length > 0) {
-      // expand out
-      toExamine = uniquify(toExamine.flatMap(s => orthogonal3d(s)), areCubesEqual);
-      // filter out surfaces we've already examined
-      toExamine = toExamine.filter(s => !includesCube(examined, s));
-      // filter out cubes
-      toExamine = toExamine.filter(s => !includesCube(cubes, s));
+    const examined = [ ];
+    let examinationQueue = [ surface ];
+    while(examinationQueue.length > 0) {
+      const toExamine = examinationQueue.shift();
+      if(includesCube(examined, toExamine)) { break; }
 
       // did we reach a known-good surface, or break the minmax bonds?
-      if(toExamine.some(s => includesCube(exteriorSurfaces, s) || reachedTheOutside(s, xMin, xMax, yMin, yMax, zMin, zMax))) {
-        // record this surface as external, move on to the next one
+      if(includesCube(exteriorSurfaces, toExamine) || reachedTheOutside(toExamine, xMin, xMax, yMin, yMax, zMin, zMax)) {
+        // record this surface as external (with all its duplicates), move on to the next one
         const matchingSurfaces = questionableSurfaces.filter(s => areCubesEqual(s, surface));
         exteriorSurfaces.push(...matchingSurfaces);
         break;
-      } else {
-        // make sure we don't examine these again
-        examined.push(...toExamine);
       }
 
-      // if there are no surfaces left, we must be on the inside, so don't record anything and move on
+      // otherwise, let's expand the queue
+      examined.push(toExamine);
+      const additions = orthogonal3d(toExamine)
+        .filter(s => !includesCube(examined, s)) // filter out surfaces we've already examined
+        .filter(s => !includesCube(cubes, s)) // filter out cubes
+      examinationQueue.unshift(...additions);
     }
+
+    // if there are no surfaces left, we must be on the inside, so don't record anything and move on
   }
 
   return exteriorSurfaces;
