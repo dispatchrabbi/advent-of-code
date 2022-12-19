@@ -18,6 +18,11 @@ function intersect(arr1, arr2, equalFn) {
   }
 }
 
+function outersect(arr1, arr2, equalFn) {
+  const intersection = intersect(arr1, arr2, equalFn);
+  return arr1.concat(arr2).filter(el => !intersection.some(il => equalFn(el, il)));
+}
+
 function transpose(arr) {
   const transposed = [];
   for(let row = 0; row < arr.length; ++row) {
@@ -81,7 +86,7 @@ function cmp(a, b) {
 }
 
 export {
-  uniquify, intersect,
+  uniquify, intersect, outersect,
   transpose, rotate,
   permute, combine,
   shuffle,

@@ -38,6 +38,14 @@ function orthogonal({x, y}) {
   ];
 }
 
+function orthogonal3d({x, y, z}) {
+  return [
+    { x: x-1, y: y  , z: z   }, { x: x+1, y: y  , z: z   },
+    { x: x  , y: y-1, z: z   }, { x: x  , y: y+1, z: z   },
+    { x: x  , y: y  , z: z-1 }, { x: x  , y: y  , z: z+1 },
+  ];
+}
+
 function manhattan({x: x1, y: y1}, {x: x2, y: y2}) {
   return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 }
@@ -45,6 +53,6 @@ function manhattan({x: x1, y: y1}, {x: x2, y: y2}) {
 export {
   coords2str, str2coords, arr2coords, coords2arr,
   adjacent, isAdjacent,
-  orthogonal,
+  orthogonal, orthogonal3d,
   manhattan,
 };

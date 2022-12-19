@@ -1,0 +1,119 @@
+import chalk from 'chalk';
+import loglevel from 'loglevel';
+import { frame } from '#lib/puzzle-renderer';
+import { orthogonal3d } from '#utils/grid';
+import { outersect, uniquify } from '#utils/arr';
+
+const log = loglevel.getLogger('puzzle');
+
+async function* part1(input, options = {}) {
+  const cubes = parseInput(input);
+
+  const exposed = findExposedSurfaces(cubes);
+
+  return exposed.length;
+}
+
+async function* part2(input, options = {}) {
+  const cubes = parseInput(input);
+
+  const exposed = findExteriorSurfaces(cubes);
+
+  return exposed.length;
+}
+
+function parseInput(input) {
+  return input.trim().split('\n').map(line => line.split(',')).map(([x, y, z]) => ({ x: +x, y: +y, z: +z }));
+}
+
+function findExposedSurfaces(cubes) {
+  let surfaces = [];
+
+  for(let cube of cubes) {
+    surfaces.push(...orthogonal3d(cube));
+  }
+
+  // remove surfaces that face cubes
+  surfaces = surfaces.filter(s => !includesCube(cubes, s));
+  return surfaces;
+}
+
+function findExteriorSurfaces(cubes) {
+  let surfaces = [];
+  let xMin = Infinity, xMax = -Infinity;
+  let yMin = Infinity, yMax = -Infinity;
+  let zMin = Infinity, zMax = -Infinity;
+
+  for(let cube of cubes) {
+    surfaces.push(...orthogonal3d(cube));
+    xMin = Math.min(xMin, cube.x);
+    xMax = Math.max(xMax, cube.x);
+    yMin = Math.min(yMin, cube.y);
+    yMax = Math.max(yMax, cube.y);
+    zMin = Math.min(zMin, cube.z);
+    zMax = Math.max(zMax, cube.z);
+  }
+
+  // remove surfaces that face cubes
+  surfaces = surfaces.filter(s => !includesCube(cubes, s));
+
+  // now we're going to check all the surfaces to see if they are exterior
+  // we're going to do that by expanding outward over and over and pruning the ones that run into cubes
+  // if we reach the outside (defined by a coordinate going outside min or max), it's exterior
+
+  // we'll start with known exterior surfaces
+  const exteriorSurfaces = surfaces.filter(s => (
+    !cubes.some(cube => cube.x > s.x && cube.y === s.y && cube.z === s.z) ||
+    !cubes.some(cube => cube.x < s.x && cube.y === s.y && cube.z === s.z) ||
+    !cubes.some(cube => cube.x === s.x && cube.y < s.y && cube.z === s.z) ||
+    !cubes.some(cube => cube.x === s.x && cube.y > s.y && cube.z === s.z) ||
+    !cubes.some(cube => cube.x === s.x && cube.y === s.y && cube.z < s.z) ||
+    !cubes.some(cube => cube.x === s.x && cube.y === s.y && cube.z > s.z)
+  ));
+
+  const questionableSurfaces = surfaces.filter(s => !includesCube(exteriorSurfaces, s));
+  const questionableCubes = uniquify(questionableSurfaces, areCubesEqual);
+
+  for(let surface of questionableCubes) {
+    // TODO: this is a BFS right now and that takes FOREVER - it should be a DFS
+    const examined = [ surface ];
+    let toExamine = [ surface ];
+    while(toExamine.length > 0) {
+      // expand out
+      toExamine = uniquify(toExamine.flatMap(s => orthogonal3d(s)), areCubesEqual);
+      // filter out surfaces we've already examined
+      toExamine = toExamine.filter(s => !includesCube(examined, s));
+      // filter out cubes
+      toExamine = toExamine.filter(s => !includesCube(cubes, s));
+
+      // did we reach a known-good surface, or break the minmax bonds?
+      if(toExamine.some(s => includesCube(exteriorSurfaces, s) || reachedTheOutside(s, xMin, xMax, yMin, yMax, zMin, zMax))) {
+        // record this surface as external, move on to the next one
+        const matchingSurfaces = questionableSurfaces.filter(s => areCubesEqual(s, surface));
+        exteriorSurfaces.push(...matchingSurfaces);
+        break;
+      } else {
+        // make sure we don't examine these again
+        examined.push(...toExamine);
+      }
+
+      // if there are no surfaces left, we must be on the inside, so don't record anything and move on
+    }
+  }
+
+  return exteriorSurfaces;
+}
+
+function includesCube(cubes, subject) {
+  return cubes.some(cube => areCubesEqual(cube, subject));
+}
+
+function areCubesEqual(a, b) {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
+}
+
+function reachedTheOutside(cube, xMin, xMax, yMin, yMax, zMin, zMax) {
+  return cube.x < xMin || cube.x > xMax || cube.y < yMin || cube.y > yMax || cube.z < zMin || cube.z > zMax;
+}
+
+export default { part1, part2 };
