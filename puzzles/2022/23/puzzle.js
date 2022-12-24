@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import loglevel from 'loglevel';
 import { frame } from '#lib/puzzle-renderer';
 
-import { adjacent } from '#utils/grid';
+import { GridMap, adjacent } from '#utils/grid';
 import { sum } from '#utils/maths';
 
 const log = loglevel.getLogger('puzzle');
@@ -170,51 +170,6 @@ function formatElves(elves) {
   }
 
   return out;
-}
-
-class GridMap {
-  constructor() {
-    this._arr = [];
-  }
-
-  set({x, y}, val) {
-    if(!this._arr[x]) {
-      this._arr[x] = [];
-    }
-
-    this._arr[x][y] = val;
-
-    return this;
-  }
-
-  get({x, y}) {
-    return this._arr[x] && this._arr[x][y];
-  }
-
-  has({x, y}) {
-    return !!this.get({x, y});
-  }
-
-  increment({x, y}) {
-    if(!this.has({x, y})) {
-      this.set({x, y}, 0);
-    }
-
-    this._arr[x][y]++;
-    return this;
-  }
-
-  keys() {
-    return this._arr.flatMap((subarr, x) => subarr.map((_, y) => ({ x, y })));
-  }
-
-  values() {
-    return this._arr.flatMap(el => el);
-  }
-
-  entries() {
-    return this._arr.flatMap((subarr, x) => subarr.map((val, y) => ([ { x, y }, val ])));
-  }
 }
 
 

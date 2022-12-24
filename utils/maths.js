@@ -28,10 +28,48 @@ function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
+// See https://en.wikipedia.org/wiki/Least_common_multiple#Calculation
+function lcm(a, b) {
+  if(a === b) { return a; }
+
+  return Math.abs(a) * (Math.abs(b) / gcd(a, b));
+}
+
+// Stein's algorithm, from https://en.wikipedia.org/wiki/Greatest_common_divisor#Binary_GCD_algorithm
+function gcd(a, b) {
+  if(a === b) { return a; }
+  if(a === 0) { return b; }
+  if(b === 0) { return a; }
+
+  let twos = 0;
+  while (a !== b) {
+    const aIsEven = a % 2 === 0;
+    const bIsEven = b % 2 === 0;
+
+    if(aIsEven && bIsEven) {
+      a /= 2;
+      b /= 2;
+      twos += 1;
+      continue;
+    } else if(aIsEven) {
+      a /= 2;
+      continue;
+    } else if(bIsEven) {
+      b /= 2;
+      continue;
+    }
+
+    if(a < b) { [ a, b ] = [ b, a ]; } // make sure a is always larger
+    a = (a - b) / 2;
+  }
+
+  return a * Math.pow(2, twos);
+}
+
 export {
   sum, sumReducer,
   product, productReducer,
   isNumeric,
   randomInt,
-  mod
+  mod, lcm, gcd,
 };
