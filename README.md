@@ -153,4 +153,4 @@ These are the options available:
 * [ ] 2019
 * [ ] 2020
 * [x] 2021
-* [ ] 2022
+* [x] 2022
