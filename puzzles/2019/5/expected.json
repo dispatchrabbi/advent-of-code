@@ -1,0 +1,21 @@
+[
+  { "part": 1, "file": "test.txt", "output": 314159, "options": { "input": [ 314159 ] } },
+
+  { "part": 2, "file": "test2-eq8-pos.txt", "output": 1, "options": { "input": [ 8 ] } },
+  { "part": 2, "file": "test2-eq8-pos.txt", "output": 0, "options": { "input": [ 1 ] } },
+  { "part": 2, "file": "test2-eq8-imm.txt", "output": 1, "options": { "input": [ 8 ] } },
+  { "part": 2, "file": "test2-eq8-imm.txt", "output": 0, "options": { "input": [ 1 ] } },
+  { "part": 2, "file": "test2-lt8-pos.txt", "output": 1, "options": { "input": [ 1 ] } },
+  { "part": 2, "file": "test2-lt8-pos.txt", "output": 0, "options": { "input": [ 8 ] } },
+  { "part": 2, "file": "test2-lt8-imm.txt", "output": 1, "options": { "input": [ 1 ] } },
+  { "part": 2, "file": "test2-lt8-imm.txt", "output": 0, "options": { "input": [ 8 ] } },
+
+  { "part": 2, "file": "test2-jmp-pos.txt", "output": 0, "options": { "input": [ 0 ] } },
+  { "part": 2, "file": "test2-jmp-pos.txt", "output": 1, "options": { "input": [ 1 ] } },
+  { "part": 2, "file": "test2-jmp-imm.txt", "output": 0, "options": { "input": [ 0 ] } },
+  { "part": 2, "file": "test2-jmp-imm.txt", "output": 1, "options": { "input": [ 1 ] } },
+
+  { "part": 2, "file": "test2-cmp8.txt", "output": 999, "options": { "input": [ -12 ] } },
+  { "part": 2, "file": "test2-cmp8.txt", "output": 1000, "options": { "input": [ 8 ] } },
+  { "part": 2, "file": "test2-cmp8.txt", "output": 1001, "options": { "input": [ 300 ] } }
+]
