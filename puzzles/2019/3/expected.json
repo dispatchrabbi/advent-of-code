@@ -1,0 +1,8 @@
+[
+  { "part": 1, "file": "test1.txt", "output": 6 },
+  { "part": 1, "file": "test2.txt", "output": 159 },
+  { "part": 1, "file": "test3.txt", "output": 135 },
+  { "part": 2, "file": "test1.txt", "output": 30 },
+  { "part": 2, "file": "test2.txt", "output": 610 },
+  { "part": 2, "file": "test3.txt", "output": 410 }
+]
