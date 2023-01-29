@@ -10,8 +10,9 @@ class Intcode {
     this.inputQueue = [];
     this.outputQueue = [];
 
+    this.relativeBase = 0;
+
     this.counter = 0;
-    this.parameterModes = [];
     this.resetFlags();
   }
 
@@ -26,7 +27,7 @@ class Intcode {
   async step() {
     this.resetFlags();
 
-    const opcode = this.pos(this.counter);
+    const opcode = this.get(this.counter);
 
     const instructionCode = opcode % 100;
     const instruction = Intcode.OPCODES[instructionCode];
@@ -37,13 +38,14 @@ class Intcode {
     // modes are encoded in the opcode, starting from the hundreds digit and moving *left*
     // any modes not explicitly there are implicitly 0
     const explicitModes = String(opcode).split('').reverse().slice(2).map(x => +x);
-    this.parameterModes = Array(instruction.args).fill(0).map((_, ix) => ix < explicitModes.length ? explicitModes[ix] : 0);
+    const modes = Array(instruction.args.length).fill(0).map((_, ix) => ix < explicitModes.length ? explicitModes[ix] : 0);
 
-    const args = this.nom(instruction.args);
+    const rawArgs = this.nom(instruction.args.length);
+    const args = rawArgs.map((arg, ix) => this[instruction.args[ix]](arg, modes[ix]));
     await instruction.fn(args, this);
 
     if(!(this.flags.jump || this.flags.halt)) {
-      this.counter += instruction.args + 1;
+      this.counter += instruction.args.length + 1;
     }
   }
 
@@ -74,21 +76,46 @@ class Intcode {
     }
   }
 
-  param(val, ix) {
-    const mode = this.parameterModes[ix];
+  static MODES = {
+    POSITION: 0,
+    IMMEDIATE: 1,
+    RELATIVE: 2,
+  };
+
+  val(param, mode) {
     switch(mode) {
-      case 0:
+      case Intcode.MODES.POSITION:
         // position mode: get the value at this location in memory
-        return this.pos(val);
-      case 1:
+        return this.get(param);
+      case Intcode.MODES.IMMEDIATE:
         // immediate mode: use this value literally
-        return val;
+        return param;
+      case Intcode.MODES.RELATIVE:
+        // relative mode: get the value at the given location plus the relative base
+        return this.get(this.relativeBase + param);
       default:
-        throw new Error(`Invalid parameter mode: ${mode} for parameter ${ix} (value ${val})`);
+        throw new Error(`Invalid parameter mode for value param: ${mode} for parameter #${ix} (value ${param})`);
     }
   }
 
-  pos(ix) {
+  addr(param, mode) {
+    switch(mode) {
+      case Intcode.MODES.POSITION:
+        // position mode: get the value at this location in memory
+        return param;
+      case Intcode.MODES.RELATIVE:
+        // relative mode: get the value at the given location plus the relative base
+        return this.relativeBase + param;
+      default:
+        throw new Error(`Invalid parameter mode for addr param: ${mode} for parameter #${ix} (value ${val})`);
+    }
+  }
+
+  get(ix) {
+    if(ix >= this.memory.length) {
+      this.memory = this.memory.concat(Array(ix + 1 - this.memory.length).fill(0));
+    }
+
     return this.memory[ix];
   }
 
@@ -121,47 +148,52 @@ class Intcode {
   static OPCODES = {
     1: {
       name: 'add',
-      args: 3,
-      fn: ([x, y, d], cpu) => { cpu.put(d, cpu.param(x, 0) + cpu.param(y, 1)); }
+      args: ['val', 'val', 'addr'],
+      fn: ([x, y, d], cpu) => { cpu.put(d, x + y); }
     },
     2: {
       name: 'mul',
-      args: 3,
-      fn: ([x, y, d], cpu) => { cpu.put(d, cpu.param(x, 0) * cpu.param(y, 1)); }
+      args: ['val', 'val', 'addr'],
+      fn: ([x, y, d], cpu) => { cpu.put(d, x * y); }
     },
     3: {
       name: 'inp',
-      args: 1,
+      args: ['addr'],
       fn: ([d], cpu) => { cpu.put(d, cpu.input()); }
     },
     4: {
       name: 'out',
-      args: 1,
-      fn: ([s], cpu) => { cpu.output(cpu.param(s, 0)); }
+      args: ['val'],
+      fn: ([s], cpu) => { cpu.output(s); }
     },
     5: {
       name: 'jnz', // a.k.a. jump-if-true
-      args: 2,
-      fn: ([t, c], cpu) => { if(cpu.param(t, 0) !== 0) { cpu.jump(cpu.param(c, 1)); } },
+      args: ['val', 'val'],
+      fn: ([t, c], cpu) => { if(t !== 0) { cpu.jump(c); } },
     },
     6: {
       name: 'jez',
-      args: 2,
-      fn: ([t, c], cpu) => { if(cpu.param(t, 0) === 0) { cpu.jump(cpu.param(c, 1)); } },
+      args: ['val', 'val'],
+      fn: ([t, c], cpu) => { if(t === 0) { cpu.jump(c); } },
     },
     7: {
       name: 'tlt',
-      args: 3,
-      fn: ([a, b, d], cpu) => { cpu.put(d, cpu.param(a, 0) < cpu.param(b, 1) ? 1 : 0); }
+      args: ['val', 'val', 'addr'],
+      fn: ([a, b, d], cpu) => { cpu.put(d, a < b ? 1 : 0); }
     },
     8: {
       name: 'teq',
-      args: 3,
-      fn: ([a, b, d], cpu) => { cpu.put(d, cpu.param(a, 0) === cpu.param(b, 1) ? 1 : 0); }
+      args: ['val', 'val', 'addr'],
+      fn: ([a, b, d], cpu) => { cpu.put(d, a === b ? 1 : 0); }
+    },
+    9: {
+      name: 'rel',
+      args: ['val'],
+      fn: ([r], cpu) => { cpu.relativeBase += r; }
     },
     99: {
       name: 'halt',
-      args: 0,
+      args: [],
       fn: (_, cpu) => { cpu.flags.halt = true; }
     },
   };
