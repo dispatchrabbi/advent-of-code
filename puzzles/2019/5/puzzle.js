@@ -8,8 +8,8 @@ const log = loglevel.getLogger('puzzle');
 async function* part1(input, options = { input: [ 1 ] }) {
   const program = parseInput(input);
 
-  const computer = new Intcode(program, options.input);
-  await computer.run();
+  const computer = new Intcode(program);
+  await computer.run(options.input);
 
   const output = computer.outputQueue;
 
@@ -19,8 +19,8 @@ async function* part1(input, options = { input: [ 1 ] }) {
 async function* part2(input, options = { input: [ 5 ] }) {
   const program = parseInput(input);
 
-  const computer = new Intcode(program, options.input);
-  await computer.run();
+  const computer = new Intcode(program);
+  await computer.run(options.input);
 
   const output = computer.outputQueue;
 

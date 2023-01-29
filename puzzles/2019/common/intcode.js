@@ -4,10 +4,10 @@ import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
 class Intcode {
-  constructor(program, inputQueue = []) {
+  constructor(program) {
     this.memory = program.slice();
 
-    this.inputQueue = inputQueue.slice();
+    this.inputQueue = [];
     this.outputQueue = [];
 
     this.counter = 0;
@@ -19,6 +19,7 @@ class Intcode {
     this.flags = {
       halt: false,
       jump: false,
+      output: false,
     };
   }
 
@@ -46,11 +47,30 @@ class Intcode {
     }
   }
 
-  async run() {
+  async run(input = []) {
+    this.inputQueue.push(...input);
     this.resetFlags();
 
     while(!this.flags.halt) {
       await this.step();
+    }
+  }
+
+  async* sprint(inputQueue = []) {
+    this.inputQueue.push(...inputQueue);
+    this.resetFlags();
+
+    while(true) {
+      await this.step();
+
+      if(this.flags.output) {
+        const input = yield this.outputQueue.shift();
+        this.inputQueue.push(...input);
+      }
+
+      if(this.flags.halt) {
+        return;
+      }
     }
   }
 
@@ -95,6 +115,7 @@ class Intcode {
 
   output(val) {
     this.outputQueue.push(val);
+    this.flags.output = true;
   }
 
   static OPCODES = {
