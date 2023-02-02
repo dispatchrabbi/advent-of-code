@@ -28,7 +28,7 @@ function parseInput(input) {
 
 async function findLargestThrusterOutputSignal(thrusterProgram) {
   let largestOutputSignal = -Infinity;
-  let correspondingPhaseSequence = null;
+  // let correspondingPhaseSequence = null;
 
   // there's a way to optimize this, but let's see if the naive way is fine first
   const phaseSequencePermutations = permute([0, 1, 2, 3, 4]);
@@ -37,7 +37,7 @@ async function findLargestThrusterOutputSignal(thrusterProgram) {
 
     if(outputSignal > largestOutputSignal) {
       largestOutputSignal = outputSignal;
-      correspondingPhaseSequence = phaseSequence;
+      // correspondingPhaseSequence = phaseSequence;
     }
   }
 
@@ -49,8 +49,8 @@ async function runThrusterProgram(thrusterProgram, phaseSequence) {
   let inputSignal = 0;
 
   for(let phase of phaseSequence) {
-    const cpu = new Intcode(thrusterProgram, [phase, inputSignal]);
-    await cpu.run();
+    const cpu = new Intcode(thrusterProgram);
+    await cpu.run([phase, inputSignal]);
     inputSignal = cpu.outputQueue[0];
   }
 
@@ -88,10 +88,9 @@ async function runContinuousThrusterProgram(thrusterProgram, phaseSequence) {
     let value, done;
     if(!cpus[cpuIx]) {
       const c = new Intcode(thrusterProgram);
-      cpus[cpuIx] = c.sprint([phaseSequence[cpuIx], inputSignal]);
+      cpus[cpuIx] = await c.sprint();
 
-      // JS doesn't let you pass anything into the first next(), so we have to do the first one separately and pass input above
-      ({ value, done } = await cpus[cpuIx].next());
+      ({ value, done } = await cpus[cpuIx].next([phaseSequence[cpuIx], inputSignal]));
     } else {
       ({ value, done } = await cpus[cpuIx].next([inputSignal]));
     }

@@ -58,16 +58,31 @@ class Intcode {
     }
   }
 
-  async* sprint(inputQueue = []) {
-    this.inputQueue.push(...inputQueue);
+  // Generators in JS are a little weird, and the first call to next() doesn't allow any input
+  // So here we avoid the awkward initial next() call and just return a primed generator
+  async sprint() {
+    const cpu = this._sprint();
+    await cpu.next();
+
+    return cpu;
+  }
+
+  async* _sprint() {
     this.resetFlags();
+
+    const initialInput = yield null;
+    if(Array.isArray(initialInput)) {
+      this.inputQueue.push(...initialInput);
+    }
 
     while(true) {
       await this.step();
 
       if(this.flags.output) {
         const input = yield this.outputQueue.shift();
-        this.inputQueue.push(...input);
+        if(Array.isArray(input)) {
+          this.inputQueue.push(...input);
+        }
       }
 
       if(this.flags.halt) {

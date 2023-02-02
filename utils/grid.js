@@ -56,25 +56,25 @@ function manhattan({x: x1, y: y1}, {x: x2, y: y2}) {
 
 class GridMap {
   constructor() {
-    this._arr = [];
+    this._store = {};
   }
 
   set({x, y}, val) {
-    if(!this._arr[y]) {
-      this._arr[y] = [];
+    if(!this._store[y]) {
+      this._store[y] = {};
     }
 
-    this._arr[y][x] = val;
+    this._store[y][x] = val;
 
     return this;
   }
 
   get({x, y}) {
-    return this._arr[y] && this._arr[y][x];
+    return this._store[y] && this._store[y][x];
   }
 
   has({x, y}) {
-    return !!this.get({x, y});
+    return this._store[y] && (this._store[y][x] !== undefined);
   }
 
   increment({x, y}) {
@@ -82,20 +82,23 @@ class GridMap {
       this.set({x, y}, 0);
     }
 
-    this._arr[y][x]++;
+    this._store[y][x]++;
     return this;
   }
 
   keys() {
-    return this._arr.flatMap((subarr, y) => subarr.map((_, x) => ({ x, y })));
+    // return Object.values(this._store).flatMap((substore, y) => Object.values(substore).map((_, x) => ({ x, y })));
+    return Object.entries(this._store).flatMap(([y, substore]) => Object.keys(substore).map(x => ({ x, y })));
   }
 
   values() {
-    return this._arr.flatMap(el => el);
+    // return this._store.flatMap(el => el);
+    return Object.values(this._store).flatMap(el => Object.values(el));
   }
 
   entries() {
-    return this._arr.flatMap((subarr, y) => subarr.map((val, x) => ([ { x, y }, val ])));
+    // return this._store.flatMap((subarr, y) => subarr.map((val, x) => ([ { x, y }, val ])));
+    return Object.entries(this._store).flatMap(([y, substore]) => Object.entries(substore).map(([x, val]) => ([ { x, y }, val ])));
   }
 }
 
