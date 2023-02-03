@@ -20,6 +20,13 @@ function rot(str, shift) {
   }).join('');
 }
 
+function leftpad(str, width, padChar = ' ') {
+  str = str.toString();
+  const pad = str.length < width ? padChar.repeat(width - str.length) : '';
+  return pad + str;
+}
+
 export {
-  rot
+  rot,
+  leftpad
 };
