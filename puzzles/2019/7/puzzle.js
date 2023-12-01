@@ -51,7 +51,7 @@ async function runThrusterProgram(thrusterProgram, phaseSequence) {
   for(let phase of phaseSequence) {
     const cpu = new Intcode(thrusterProgram);
     await cpu.run([phase, inputSignal]);
-    inputSignal = cpu.outputQueue[0];
+    inputSignal = cpu.outputDevice.take()[0];
   }
 
   return inputSignal;

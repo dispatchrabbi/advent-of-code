@@ -49,3 +49,6 @@ node_modules/
 
 # Profiling from 0x
 *.0x
+
+# .DS_Store
+.DS_Store

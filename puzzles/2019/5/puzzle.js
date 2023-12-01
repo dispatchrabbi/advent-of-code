@@ -11,7 +11,7 @@ async function* part1(input, options = { input: [ 1 ] }) {
   const computer = new Intcode(program);
   await computer.run(options.input);
 
-  const output = computer.outputQueue;
+  const output = computer.outputDevice.take();
 
   return output[output.length - 1];
 }
@@ -22,7 +22,7 @@ async function* part2(input, options = { input: [ 5 ] }) {
   const computer = new Intcode(program);
   await computer.run(options.input);
 
-  const output = computer.outputQueue;
+  const output = computer.outputDevice.take();
 
   return output[output.length - 1];
 }

@@ -4,24 +4,16 @@ import loglevel from 'loglevel';
 const log = loglevel.getLogger('puzzle');
 
 class Intcode {
-  constructor(program) {
+  constructor(program, inputDevice = new InputQueue(), outputDevice = new OutputQueue()) {
     this.memory = program.slice();
 
-    this.inputQueue = [];
-    this.outputQueue = [];
+    this.inputDevice = inputDevice;
+    this.outputDevice = outputDevice;
 
     this.relativeBase = 0;
 
     this.counter = 0;
     this.resetFlags();
-  }
-
-  resetFlags() {
-    this.flags = {
-      halt: false,
-      jump: false,
-      output: false,
-    };
   }
 
   async step() {
@@ -44,17 +36,26 @@ class Intcode {
     const args = rawArgs.map((arg, ix) => this[instruction.args[ix]](arg, modes[ix]));
     await instruction.fn(args, this);
 
-    if(!(this.flags.jump || this.flags.halt)) {
+    if(!(this.flags.jump || this.flags.waiting || this.flags.halt)) {
       this.counter += instruction.args.length + 1;
     }
   }
 
-  async run(input = []) {
-    this.inputQueue.push(...input);
-    this.resetFlags();
+  async run(initialInput) {
+    if(Array.isArray(initialInput)) {
+      this.inputDevice.give(...initialInput);
+    }
 
-    while(!this.flags.halt) {
+    while(true) {
       await this.step();
+
+      if(this.flags.waiting) {
+        break;
+      }
+
+      if(this.flags.halt) {
+        break;
+      }
     }
   }
 
@@ -72,16 +73,16 @@ class Intcode {
 
     const initialInput = yield null;
     if(Array.isArray(initialInput)) {
-      this.inputQueue.push(...initialInput);
+      this.inputDevice.give(...initialInput);
     }
 
     while(true) {
       await this.step();
 
       if(this.flags.output) {
-        const input = yield this.outputQueue.shift();
+        const input = yield this.outputDevice.take(1)[0];
         if(Array.isArray(input)) {
-          this.inputQueue.push(...input);
+          this.inputDevice.give(...input);
         }
       }
 
@@ -134,7 +135,7 @@ class Intcode {
     return this.memory[ix];
   }
 
-  put(ix, val) {
+  set(ix, val) {
     this.memory[ix] = val;
   }
 
@@ -147,16 +148,22 @@ class Intcode {
     return this.memory.slice(this.counter + 1, this.counter + times + 1);
   }
 
-  input() {
-    if(this.inputQueue.length > 0) {
-      return this.inputQueue.shift();
-    } else {
-      throw new Error(`No input to take`);
-    }
+  resetFlags() {
+    this.flags = {
+      halt: false,
+      jump: false,
+      waiting: false,
+      output: false,
+    };
   }
 
-  output(val) {
-    this.outputQueue.push(val);
+  read() {
+    return this.inputDevice.read();
+  }
+
+  write(val) {
+    this.outputDevice.write(val);
+
     this.flags.output = true;
   }
 
@@ -164,22 +171,22 @@ class Intcode {
     1: {
       name: 'add',
       args: ['val', 'val', 'addr'],
-      fn: ([x, y, d], cpu) => { cpu.put(d, x + y); }
+      fn: ([x, y, d], cpu) => { cpu.set(d, x + y); }
     },
     2: {
       name: 'mul',
       args: ['val', 'val', 'addr'],
-      fn: ([x, y, d], cpu) => { cpu.put(d, x * y); }
+      fn: ([x, y, d], cpu) => { cpu.set(d, x * y); }
     },
     3: {
       name: 'inp',
       args: ['addr'],
-      fn: ([d], cpu) => { cpu.put(d, cpu.input()); }
+      fn: ([d], cpu) => { cpu.set(d, cpu.read()); }
     },
     4: {
       name: 'out',
       args: ['val'],
-      fn: ([s], cpu) => { cpu.output(s); }
+      fn: ([s], cpu) => { cpu.write(s); }
     },
     5: {
       name: 'jnz', // a.k.a. jump-if-true
@@ -194,12 +201,12 @@ class Intcode {
     7: {
       name: 'tlt',
       args: ['val', 'val', 'addr'],
-      fn: ([a, b, d], cpu) => { cpu.put(d, a < b ? 1 : 0); }
+      fn: ([a, b, d], cpu) => { cpu.set(d, a < b ? 1 : 0); }
     },
     8: {
       name: 'teq',
       args: ['val', 'val', 'addr'],
-      fn: ([a, b, d], cpu) => { cpu.put(d, a === b ? 1 : 0); }
+      fn: ([a, b, d], cpu) => { cpu.set(d, a === b ? 1 : 0); }
     },
     9: {
       name: 'rel',
@@ -212,6 +219,40 @@ class Intcode {
       fn: (_, cpu) => { cpu.flags.halt = true; }
     },
   };
+}
+
+class InputQueue {
+  constructor() {
+    this.queue = [];
+  }
+
+  read() {
+    if(this.queue.length > 0) {
+      return this.queue.shift();
+    } else {
+      throw new Error('No more values in the input queue!');
+    }
+  }
+
+  give(...vals) {
+    this.queue.push(...vals);
+  }
+}
+
+class OutputQueue {
+  constructor() {
+    this.queue = [];
+  }
+
+  write(val) {
+    this.queue.push(val);
+  }
+
+  take(n = Infinity) {
+    const out = this.queue.slice(0, n);
+    this.queue = this.queue.slice(n);
+    return out;
+  }
 }
 
 export { Intcode };

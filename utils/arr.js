@@ -79,6 +79,20 @@ function shuffle(arr) {
   return shuffled;
 }
 
+function chunk(arr, size, padding = undefined) {
+  if(padding === undefined && (arr.length % size !== 0)) {
+    throw new Error(`arr (length ${arr.length}) is not evenly divisible by chunk size (${size}) and no padding value was given`);
+  }
+
+  const chunks = [];
+  for(let i = 0; i < arr.length; i += size) {
+    const ch = arr.slice(i, i + size);
+    chunks.push(ch.length < size ? ch.concat(Array(size - ch.length).fill(padding)) : ch);
+  }
+
+  return chunks;
+}
+
 function cmp(a, b) {
   if(a < b) { return -1; }
   if(a > b) { return  1; }
@@ -90,5 +104,6 @@ export {
   transpose, rotate,
   permute, combine,
   shuffle,
+  chunk,
   cmp,
 };

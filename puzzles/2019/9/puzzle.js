@@ -10,7 +10,7 @@ async function* part1(input, options = {}) {
 
   const cpu = new Intcode(program);
   await cpu.run([1]);
-  const result = cpu.outputQueue;
+  const result = cpu.outputDevice.take();
 
   return result;
 }
@@ -20,7 +20,7 @@ async function* part2(input, options = {}) {
 
   const cpu = new Intcode(program);
   await cpu.run([2]);
-  const result = cpu.outputQueue;
+  const result = cpu.outputDevice.take();
 
   return result;
 }
