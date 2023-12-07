@@ -93,6 +93,13 @@ function chunk(arr, size, padding = undefined) {
   return chunks;
 }
 
+function counts(arr) {
+  return arr.reduce((counts, el) => {
+    counts[el] = (counts[el] || 0) + 1;
+    return counts;
+  }, {});
+}
+
 function cmp(a, b) {
   if(a < b) { return -1; }
   if(a > b) { return  1; }
@@ -104,6 +111,6 @@ export {
   transpose, rotate,
   permute, combine,
   shuffle,
-  chunk,
+  chunk, counts,
   cmp,
 };
