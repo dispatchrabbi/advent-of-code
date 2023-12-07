@@ -9,8 +9,9 @@ const log = loglevel.getLogger('puzzle');
 async function* part1(input, options = {}) {
   const hands = parseInput(input);
 
+  const cmpHands = makeCmpHands(rankHandPart1, CARD_RANKS_PART_1);
   const winnings = hands
-    .sort((a, b) => cmpHands(a.hand, b.hand, rankHandPart1, CARD_RANKS_PART_1))
+    .sort((a, b) => cmpHands(a.hand, b.hand))
     .map(({ bid }, ix) => bid * (ix + 1));
 
   return sum(winnings);
@@ -19,8 +20,9 @@ async function* part1(input, options = {}) {
 async function* part2(input, options = {}) {
   const hands = parseInput(input);
 
+  const cmpHands = makeCmpHands(rankHandPart2, CARD_RANKS_PART_2);
   const winnings = hands
-    .sort((a, b) => cmpHands(a.hand, b.hand, rankHandPart2, CARD_RANKS_PART_2))
+    .sort((a, b) => cmpHands(a.hand, b.hand))
     .map(({ bid }, ix) => bid * (ix + 1));
 
   return sum(winnings);
@@ -95,20 +97,22 @@ function rankHandPart2(hand) {
 
 const CARD_RANKS_PART_1 = [ '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A' ];
 const CARD_RANKS_PART_2 = [ 'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A' ];
-function cmpHands(a, b, rankHandFn, cardRankArr) {
-  const typeCmp = rankHandFn(a) - rankHandFn(b);
-  if(typeCmp !== 0) {
-    return typeCmp;
-  }
-
-  let cardCmp = 0;
-  for(let i = 0; i < a.length; ++i) {
-    cardCmp = cardRankArr.indexOf(a[i]) - cardRankArr.indexOf(b[i]);
-    if(cardCmp !== 0) {
-      break;
+function makeCmpHands(rankHandFn, cardRanksArr) {
+  return function(a, b) {
+    const typeCmp = rankHandFn(a) - rankHandFn(b);
+    if(typeCmp !== 0) {
+      return typeCmp;
     }
-  }
-  return cardCmp;
+
+    let cardCmp = 0;
+    for(let i = 0; i < a.length; ++i) {
+      cardCmp = cardRanksArr.indexOf(a[i]) - cardRanksArr.indexOf(b[i]);
+      if(cardCmp !== 0) {
+        break;
+      }
+    }
+    return cardCmp;
+  };
 }
 
 export default { part1, part2 };
