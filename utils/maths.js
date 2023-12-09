@@ -29,10 +29,14 @@ function mod(n, m) {
 }
 
 // See https://en.wikipedia.org/wiki/Least_common_multiple#Calculation
-function lcm(a, b) {
+function _lcm(a, b) {
   if(a === b) { return a; }
 
   return Math.abs(a) * (Math.abs(b) / gcd(a, b));
+}
+
+function lcm(...args) {
+  return args.reduce(_lcm, 1);
 }
 
 // Stein's algorithm, from https://en.wikipedia.org/wiki/Greatest_common_divisor#Binary_GCD_algorithm
