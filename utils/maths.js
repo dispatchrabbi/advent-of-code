@@ -70,10 +70,21 @@ function gcd(a, b) {
   return a * Math.pow(2, twos);
 }
 
+function divisors(n) {
+  const found = [];
+  for(let i = 0; i <= (n/2); ++i) {
+    if(n % i === 0) {
+      found.push(i);
+    }
+  }
+
+  return found;
+}
+
 export {
   sum, sumReducer,
   product, productReducer,
   isNumeric,
   randomInt,
-  mod, lcm, gcd,
+  mod, lcm, gcd, divisors
 };
