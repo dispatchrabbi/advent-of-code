@@ -197,7 +197,16 @@ async function run(year, day, part, options = { inputs: { file: null, real: true
 }
 
 async function getPuzzleFn(puzzleDir, part) {
-  const parts = await import(path.join(puzzleDir, 'puzzle.js'));
+  let puzzleFilePath = path.join(puzzleDir, 'puzzle');
+  try {
+    const tsPuzzleFilePath = puzzleFilePath + '.ts';
+    await fs.access(tsPuzzleFilePath);
+    puzzleFilePath = tsPuzzleFilePath;
+  } catch{
+    puzzleFilePath = puzzleFilePath + '.js';
+  }
+
+  const parts = await import(puzzleFilePath);
 
   const fn = parts.default['part' + part];
   if(!isAsyncFunction(fn) && !isAsyncGeneratorFunction(fn)) {
