@@ -1,7 +1,7 @@
 import { randomInt, mod } from '#utils/maths';
 
-function uniquify(arr, equalFn = (a, b) => a === b) {
-  const uniques = [];
+function uniquify<T>(arr: T[], equalFn = (a: T, b: T): boolean => a === b) {
+  const uniques: T[] = [];
   for(let el of arr) {
     if(!uniques.some(candidate => equalFn(el, candidate))) {
       uniques.push(el);
@@ -23,11 +23,10 @@ function outersect(arr1, arr2, equalFn) {
   return arr1.concat(arr2).filter(el => !intersection.some(il => equalFn(el, il)));
 }
 
-function transpose(arr) {
-  const transposed = [];
+function transpose<T>(arr: T[][]): T[][] {
+  const transposed: T[][] = Array(arr[0].length).fill(null).map(() => []);
   for(let row = 0; row < arr.length; ++row) {
     for(let col = 0; col < arr[row].length; ++col) {
-      if(! (transposed[col] instanceof Array)) { transposed[col] = []; }
       transposed[col][row] = arr[row][col];
     }
   }
@@ -40,10 +39,10 @@ function rotate(arr, places) {
   return arr.slice(-places).concat(arr.slice(0, -places));
 }
 
-function permute(arr) {
+function permute<T>(arr: T[]) {
   if(arr.length === 1) { return [ arr ]; }
 
-  let permutations = [];
+  let permutations: T[][] = [];
   for(let el of arr) {
     permutations = permutations.concat(permute(arr.filter(x => x !== el)).map(subpermutation => [el, ...subpermutation]));
   }
@@ -68,8 +67,8 @@ function combine(arr) {
   return combinations;
 }
 
-function shuffle(arr) {
-  const shuffled = [];
+function shuffle<T>(arr: T[]) {
+  const shuffled: T[] = [];
   const clone = arr.slice();
 
   while(clone.length > 0) {
@@ -79,12 +78,12 @@ function shuffle(arr) {
   return shuffled;
 }
 
-function chunk(arr, size, padding = undefined) {
+function chunk<T>(arr: T[], size: number, padding: T | undefined = undefined) {
   if(padding === undefined && (arr.length % size !== 0)) {
     throw new Error(`arr (length ${arr.length}) is not evenly divisible by chunk size (${size}) and no padding value was given`);
   }
 
-  const chunks = [];
+  const chunks: T[][] = [];
   for(let i = 0; i < arr.length; i += size) {
     const ch = arr.slice(i, i + size);
     chunks.push(ch.length < size ? ch.concat(Array(size - ch.length).fill(padding)) : ch);
