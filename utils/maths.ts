@@ -71,10 +71,11 @@ function gcd(a, b) {
 }
 
 function divisors(n) {
-  const found = [];
-  for(let i = 0; i <= (n/2); ++i) {
+  const found: number[] = [];
+  for(let i = 0; i <= Math.sqrt(n); ++i) {
     if(n % i === 0) {
       found.push(i);
+      found.push(n / i);
     }
   }
 

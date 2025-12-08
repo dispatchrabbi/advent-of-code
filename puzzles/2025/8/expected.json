@@ -1,0 +1,4 @@
+[
+  { "part": 1, "file": "test.txt", "output": 40, "options": { "connections": 10 } },
+  { "part": 2, "file": "test.txt", "output": 25272, "options": { "connections": 10 } }
+]
