@@ -1,0 +1,7 @@
+[
+  { "part": 1, "file": "test.txt", "output": 50 },
+  { "part": 3, "file": "test.txt", "output": 24 },
+  { "part": 3, "file": "test-H.txt", "output": 30 },
+  { "part": 2, "file": "test-L.txt", "output": 88 },
+  { "part": 3, "file": "test-J.txt", "output": 72 }
+]
