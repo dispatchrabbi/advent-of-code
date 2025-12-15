@@ -109,49 +109,47 @@ function solveMachineJoltages(machine: Machine) {
     [Array(machine.joltages.length).fill(0).join(','), Array(machine.buttons.length).fill(0)],
   ]);
   const findLeastButtonPressesForJoltages = function(j: number[], depth: number = 0): number[] {
-    // const indent = Array(depth).fill('  ').join('');
-    // console.log(indent, j);
     let joltages = j.slice();
 
     const key = joltages.join(',');
     if(joltageMemos.has(key)) {
-      // console.log(indent, 'cache hit', joltageMemos.get(key)!);
+      // cache hit!
       return joltageMemos.get(key)!;
     }
 
     // get the odd/even pattern from joltages (reversed because joltages is little-endian but patterns are big-endian like numbers)
+    // this will let us figure out what buttons to press to get rid of any odd numbers
     const pattern = parseInt(joltages.map(j => j % 2).reverse().join(''), 2);
-    // console.log(indent, 'pattern', pattern.toString(2));
 
     const buttonCombos = buttonPatterns.get(pattern);
     if((!buttonCombos) || buttonCombos.length === 0) {
       // no way to push buttons to get this pattern - bail out
-      // console.log(indent, `no way to get to ${pattern.toString(2)}, bailing!`);
       return Array(machine.buttons.length).fill(Infinity);
     }
 
+    // figure out which of the combos gets us the fewest button presses
     let winnerSoFar = Array(machine.buttons.length).fill(Infinity);
     for(const combo of buttonCombos) {
-      // console.log(indent, `one way to get to ${pattern.toString(2)} is`, combo.toString(2));
       // turn the combo (which is a number, so big-endian) into an array of presses (which is little-endian, b/c 0-indexed)
       let contender = combo.toString(2).split('').reverse().map(x => +x);
       while(contender.length < machine.buttons.length) {
         contender.push(0);
       }
-      // console.log(indent, `which is this in button presses:`, contender, `(${sum(contender)})`);
       
+      // and subtract the effects of those presses from the joltages (so we know how much more we have to go)
       const leftoverJoltages = joltages.slice();
       for(let btnIx = 0; btnIx < contender.length; ++btnIx) {
         for(const joltageIx of machine.buttons[btnIx]) {
           leftoverJoltages[joltageIx] -= contender[btnIx];
         }
       }
-      // console.log(indent, `after pressing those buttons, what's leftover is:`, leftoverJoltages);
 
+      // sanity-check to make sure everything is non-negative
       if(leftoverJoltages.every(j => j >= 0)) {
         // all the leftover joltages are guaranteed to be even at this point
+        // because we pressed buttons to take care of the odd joltages
+        // so the solution from here out is to figure out how to get to half of what's remaining and just press those buttons twice!
         const halved = leftoverJoltages.map(j => j / 2);
-        // console.log(indent, `and the joltages left to account for (x2) are:`, halved);
         const pressesForLeftoverHalvedJoltages = findLeastButtonPressesForJoltages(halved, depth + 1);
         contender = contender.map((val, ix) => val + (2 * pressesForLeftoverHalvedJoltages[ix]));
       } else {
@@ -159,14 +157,13 @@ function solveMachineJoltages(machine: Machine) {
         continue;
       }
 
-      // console.log(indent, `the full contender (for presses) is:`, contender, `(${sum(contender)})`);
       if(sum(contender) < sum(winnerSoFar)) {
         winnerSoFar = contender;
       }
     }
 
+    // don't forget to memoize for the future
     joltageMemos.set(key, winnerSoFar);
-    // console.log(indent, `the winner for ${key} is:`, winnerSoFar, `(${sum(winnerSoFar)})`);
     return winnerSoFar;
   }
 
